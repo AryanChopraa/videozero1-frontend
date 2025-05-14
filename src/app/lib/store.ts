@@ -29,12 +29,15 @@ interface FilterState {
   selectedChannel: string;
   dateRange: string;
   statType: string;
+  customStartDate: string | null;
+  customEndDate: string | null;
   channels: Channel[];
   isLoading: boolean;
   error: string | null;
   setSelectedChannel: (channelId: string) => void;
   setDateRange: (dateRange: string) => void;
   setStatType: (statType: string) => void;
+  setCustomDateRange: (startDate: string, endDate: string) => void;
   fetchChannels: () => Promise<void>;
 }
 
@@ -148,6 +151,8 @@ export const useFilterStore = create<FilterState>()(
       selectedChannel: 'all',
       dateRange: 'last30days',
       statType: 'total',
+      customStartDate: null,
+      customEndDate: null,
       channels: [],
       isLoading: false,
       error: null,
@@ -155,6 +160,11 @@ export const useFilterStore = create<FilterState>()(
       setSelectedChannel: (channelId: string) => set({ selectedChannel: channelId }),
       setDateRange: (dateRange: string) => set({ dateRange }),
       setStatType: (statType: string) => set({ statType }),
+      setCustomDateRange: (startDate: string, endDate: string) => set({ 
+        customStartDate: startDate, 
+        customEndDate: endDate,
+        dateRange: 'custom' 
+      }),
       
       fetchChannels: async () => {
         const state = get();
@@ -178,6 +188,8 @@ export const useFilterStore = create<FilterState>()(
         selectedChannel: state.selectedChannel,
         dateRange: state.dateRange,
         statType: state.statType,
+        customStartDate: state.customStartDate,
+        customEndDate: state.customEndDate,
         channels: state.channels,
       }),
     }

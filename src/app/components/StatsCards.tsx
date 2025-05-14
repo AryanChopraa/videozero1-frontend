@@ -5,12 +5,19 @@ import { useFilterStore } from '../lib/store';
 import { getChannelStats, ChannelStats } from '../lib/api';
 
 export default function StatsCards() {
-  const { selectedChannel, dateRange, channels } = useFilterStore();
+  const { 
+    selectedChannel, 
+    dateRange, 
+    customStartDate, 
+    customEndDate, 
+    channels 
+  } = useFilterStore();
+  
   const [stats, setStats] = useState<ChannelStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const fetchInProgress = useRef(false);
-  const lastFetchParams = useRef<{channel: string, dateRange: string} | null>(null);
+  const lastFetchParams = useRef<{channel: string, dateRange: string, customStart?: string, customEnd?: string} | null>(null);
   
   useEffect(() => {
     // Skip if no channel selected or 'all' is selected
@@ -25,7 +32,10 @@ export default function StatsCards() {
     // Skip if we already fetched with the same parameters
     if (lastFetchParams.current && 
         lastFetchParams.current.channel === selectedChannel && 
-        lastFetchParams.current.dateRange === dateRange) {
+        lastFetchParams.current.dateRange === dateRange &&
+        (dateRange !== 'custom' || 
+          (lastFetchParams.current.customStart === customStartDate && 
+           lastFetchParams.current.customEnd === customEndDate))) {
       return;
     }
     
@@ -38,7 +48,11 @@ export default function StatsCards() {
         // Store current fetch parameters
         lastFetchParams.current = {
           channel: selectedChannel,
-          dateRange: dateRange
+          dateRange: dateRange,
+          ...(dateRange === 'custom' && { 
+            customStart: customStartDate || undefined, 
+            customEnd: customEndDate || undefined 
+          })
         };
         
         // Find the selected channel in the channels array to get the channel_id
@@ -63,20 +77,42 @@ export default function StatsCards() {
           thirtyDaysAgo.setDate(today.getDate() - 30);
           startDate = thirtyDaysAgo.toISOString().split('T')[0];
           endDate = today.toISOString().split('T')[0];
+        } else if (dateRange === 'last60days') {
+          const sixtyDaysAgo = new Date();
+          sixtyDaysAgo.setDate(today.getDate() - 60);
+          startDate = sixtyDaysAgo.toISOString().split('T')[0];
+          endDate = today.toISOString().split('T')[0];
         } else if (dateRange === 'last90days') {
           const ninetyDaysAgo = new Date();
           ninetyDaysAgo.setDate(today.getDate() - 90);
           startDate = ninetyDaysAgo.toISOString().split('T')[0];
           endDate = today.toISOString().split('T')[0];
-        } else if (dateRange === 'last12months') {
-          const twelveMonthsAgo = new Date();
-          twelveMonthsAgo.setMonth(today.getMonth() - 12);
-          startDate = twelveMonthsAgo.toISOString().split('T')[0];
+        } else if (dateRange === 'lastYear' || dateRange === 'last12months') {
+          const yearAgo = new Date();
+          yearAgo.setFullYear(today.getFullYear() - 1);
+          startDate = yearAgo.toISOString().split('T')[0];
           endDate = today.toISOString().split('T')[0];
+        } else if (dateRange === 'custom') {
+          // Use the custom date range from the store
+          if (customStartDate && customEndDate) {
+            startDate = customStartDate;
+            endDate = customEndDate;
+          } else {
+            setError('Custom date range not properly set');
+            setLoading(false);
+            fetchInProgress.current = false;
+            return;
+          }
+        } else if (dateRange === 'allTime') {
+          // For allTime, we don't set dates - API will return all data
+          console.log('All time range selected');
         }
-        // If dateRange is 'all', we don't set startDate and endDate
 
         console.log(`Fetching stats for channel ${selectedChannel} with date range ${dateRange}`);
+        if (startDate && endDate) {
+          console.log(`Date range: ${startDate} to ${endDate}`);
+        }
+        
         const statsData = await getChannelStats(youtubeChannelId, startDate, endDate);
         setStats(statsData);
       } catch (err) {
@@ -88,7 +124,7 @@ export default function StatsCards() {
     };
 
     fetchStats();
-  }, [selectedChannel, dateRange, channels]);
+  }, [selectedChannel, dateRange, customStartDate, customEndDate, channels]);
 
   if (loading) {
     return (
