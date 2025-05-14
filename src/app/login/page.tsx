@@ -13,13 +13,34 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [orgName, setOrgName] = useState('');
+  const [isClientLoaded, setIsClientLoaded] = useState(false);
+
+  // Set client-side loaded flag
+  useEffect(() => {
+    setIsClientLoaded(true);
+  }, []);
 
   // Redirect if authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push('/dashboard');
+    if (!isClientLoaded) return;
+    
+    if (isAuthenticated && !loading) {
+      // Check if there's a stored redirect path
+      const redirectPath = 
+        typeof window !== 'undefined' 
+          ? sessionStorage.getItem('redirectAfterLogin') 
+          : null;
+      
+      if (redirectPath) {
+        // Clear the stored path
+        sessionStorage.removeItem('redirectAfterLogin');
+        router.push(redirectPath);
+      } else {
+        // Default redirect
+        router.push('/dashboard');
+      }
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, loading, router, isClientLoaded]);
 
   const toggleModal = () => {
     setIsLoginModal(!isLoginModal);

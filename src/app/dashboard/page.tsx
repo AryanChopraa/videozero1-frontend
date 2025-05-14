@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../lib/store';
 import Sidebar from '../components/Sidebar';
@@ -11,23 +11,42 @@ import VideoStatistics from '../components/VideoStatistics';
 export default function Dashboard() {
   const router = useRouter();
   const { user, loading, isAuthenticated, logout, fetchUserProfile } = useAuthStore();
+  const [isClientLoaded, setIsClientLoaded] = useState(false);
   const profileFetched = useRef(false);
 
+  // Handle hydration mismatch by confirming client-side rendering is complete
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    setIsClientLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    // Only run auth checks after client-side hydration is complete
+    if (!isClientLoaded) return;
+
+    // Don't redirect immediately if still loading
+    if (loading) return;
+
+    // Only redirect to login if we're definitely not authenticated
+    if (!isAuthenticated) {
+      console.log("Not authenticated, redirecting to login");
+      // Store the intended destination to return after login
+      sessionStorage.setItem('redirectAfterLogin', '/dashboard');
       router.push('/login');
-    } else if (isAuthenticated && !loading && !profileFetched.current) {
+    } else if (!profileFetched.current) {
+      // Only fetch profile once when authenticated
       profileFetched.current = true;
+      console.log("Authenticated, fetching profile");
       fetchUserProfile();
     }
-  }, [isAuthenticated, loading, router, fetchUserProfile]);
+  }, [isAuthenticated, loading, router, fetchUserProfile, isClientLoaded]);
 
   const handleLogout = () => {
     logout();
     router.push('/login');
   };
 
-  if (loading) {
+  // Only show loading state if actually still loading auth
+  if (!isClientLoaded || loading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-xl">Loading...</div>
@@ -35,6 +54,7 @@ export default function Dashboard() {
     );
   }
 
+  // Don't render anything during redirect to login
   if (!isAuthenticated || !user) {
     return null;
   }
