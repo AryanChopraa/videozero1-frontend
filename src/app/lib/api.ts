@@ -74,25 +74,16 @@ export const signup = async (params: SignupParams): Promise<AuthResponse> => {
 
 export const getUserData = async (): Promise<User> => {
   try {
-    const response = await api.get<{ user: User }>('/auth/me');
-    return response.data.user;
-  } catch (error) {
-    throw new Error('Failed to get user data');
-  }
-};
-
-export const getProfile = async (): Promise<User> => {
-  try {
     const response = await api.get<ProfileResponse>('/users/profile');
     if (response.data.success) {
       return response.data.user;
     }
-    throw new Error('Failed to get profile data');
+    throw new Error('Failed to get user data');
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      throw new Error(error.response.data.message || 'Failed to get profile data');
+      throw new Error(error.response.data.message || 'Failed to get user data');
     }
-    throw new Error('Failed to get profile data. Please try again.');
+    throw new Error('Failed to get user data. Please try again.');
   }
 };
 

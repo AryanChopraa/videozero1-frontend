@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { login as apiLogin, signup as apiSignup, User, AuthResponse } from './api';
+import { login as apiLogin, signup as apiSignup, getUserData, User, AuthResponse } from './api';
 
 interface LoginParams {
   email: string;
@@ -22,11 +22,12 @@ interface AuthState {
   login: (params: LoginParams) => Promise<void>;
   signup: (params: SignupParams) => Promise<void>;
   logout: () => void;
+  fetchUserProfile: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       isAuthenticated: false,
       user: null,
       accessToken: null,
@@ -81,6 +82,27 @@ export const useAuthStore = create<AuthState>()(
           set({ 
             loading: false, 
             error: error instanceof Error ? error.message : 'An error occurred during signup' 
+          });
+        }
+      },
+      
+      fetchUserProfile: async () => {
+        if (get().loading) return;
+        
+        set({ loading: true, error: null });
+        
+        try {
+          const userData = await getUserData();
+          
+          set({
+            user: userData,
+            isAuthenticated: true,
+            loading: false,
+          });
+        } catch (error) {
+          set({ 
+            loading: false, 
+            error: error instanceof Error ? error.message : 'Failed to fetch user profile' 
           });
         }
       },
