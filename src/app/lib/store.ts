@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { login as apiLogin, signup as apiSignup, getUserData, User, AuthResponse } from './api';
+import { login as apiLogin, signup as apiSignup, getUserData, getChannels, User, AuthResponse, Channel } from './api';
 
 interface LoginParams {
   email: string;
@@ -23,6 +23,19 @@ interface AuthState {
   signup: (params: SignupParams) => Promise<void>;
   logout: () => void;
   fetchUserProfile: () => Promise<void>;
+}
+
+interface FilterState {
+  selectedChannel: string;
+  dateRange: string;
+  statType: string;
+  channels: Channel[];
+  isLoading: boolean;
+  error: string | null;
+  setSelectedChannel: (channelId: string) => void;
+  setDateRange: (dateRange: string) => void;
+  setStatType: (statType: string) => void;
+  fetchChannels: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -124,6 +137,48 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
         user: state.user,
         accessToken: state.accessToken,
+      }),
+    }
+  )
+);
+
+export const useFilterStore = create<FilterState>()(
+  persist(
+    (set, get) => ({
+      selectedChannel: 'all',
+      dateRange: 'last30days',
+      statType: 'total',
+      channels: [],
+      isLoading: false,
+      error: null,
+      
+      setSelectedChannel: (channelId: string) => set({ selectedChannel: channelId }),
+      setDateRange: (dateRange: string) => set({ dateRange }),
+      setStatType: (statType: string) => set({ statType }),
+      
+      fetchChannels: async () => {
+        const state = get();
+        if (state.isLoading) return;
+        
+        set({ isLoading: true, error: null });
+        try {
+          const channelsData = await getChannels();
+          set({ channels: channelsData, isLoading: false });
+        } catch (error) {
+          set({ 
+            isLoading: false, 
+            error: error instanceof Error ? error.message : 'Failed to fetch channels' 
+          });
+        }
+      }
+    }),
+    {
+      name: 'filter-storage',
+      partialize: (state) => ({
+        selectedChannel: state.selectedChannel,
+        dateRange: state.dateRange,
+        statType: state.statType,
+        channels: state.channels,
       }),
     }
   )

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '../lib/store';
+import { useAuthStore, useFilterStore } from '../lib/store';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import StatsCards from '../components/StatsCards';
@@ -11,8 +11,10 @@ import VideoStatistics from '../components/VideoStatistics';
 export default function Dashboard() {
   const router = useRouter();
   const { user, loading, isAuthenticated, logout, fetchUserProfile } = useAuthStore();
+  const { fetchChannels, channels } = useFilterStore();
   const [isClientLoaded, setIsClientLoaded] = useState(false);
   const profileFetched = useRef(false);
+  const channelsFetched = useRef(false);
 
   // Handle hydration mismatch by confirming client-side rendering is complete
   useEffect(() => {
@@ -39,6 +41,14 @@ export default function Dashboard() {
       fetchUserProfile();
     }
   }, [isAuthenticated, loading, router, fetchUserProfile, isClientLoaded]);
+
+  // Fetch channels when authenticated - only once
+  useEffect(() => {
+    if (isAuthenticated && isClientLoaded && !channelsFetched.current && channels.length === 0) {
+      channelsFetched.current = true;
+      fetchChannels();
+    }
+  }, [isAuthenticated, isClientLoaded, channels.length]);
 
   const handleLogout = () => {
     logout();

@@ -87,4 +87,137 @@ export const getUserData = async (): Promise<User> => {
   }
 };
 
-export type { User, AuthResponse, LoginParams, SignupParams, ProfileResponse }; 
+// YouTube OAuth functions
+interface YouTubeAuthResponse {
+  success: boolean;
+  auth_url: string;
+}
+
+interface YouTubeCallbackParams {
+  code: string;
+  state: string;
+}
+
+export const getYouTubeAuthUrl = async (): Promise<string> => {
+  try {
+    const response = await api.get<YouTubeAuthResponse>('/youtube/auth');
+    if (response.data.success) {
+      return response.data.auth_url;
+    }
+    throw new Error('Failed to get YouTube auth URL');
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(error.response.data.message || 'Failed to get YouTube auth URL');
+    }
+    throw new Error('Failed to get YouTube authorization URL. Please try again.');
+  }
+};
+
+export const handleYouTubeCallback = async (params: YouTubeCallbackParams): Promise<any> => {
+  try {
+    const response = await api.post('/youtube/callback', params);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(error.response.data.message || 'YouTube authorization failed');
+    }
+    throw new Error('YouTube authorization failed. Please try again.');
+  }
+};
+
+// Channel types and functions
+interface Channel {
+  id: string;
+  channel_id: string;
+  title: string;
+  description: string;
+  custom_url: string;
+  thumbnail_url: string;
+  view_count: number;
+  subscriber_count: number;
+  video_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ChannelsResponse {
+  success: boolean;
+  channels: Channel[];
+}
+
+export const getChannels = async (): Promise<Channel[]> => {
+  try {
+    const response = await api.get<ChannelsResponse>('/channels/all');
+    if (response.data.success) {
+      return response.data.channels;
+    }
+    throw new Error('Failed to get channels');
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(error.response.data.message || 'Failed to get channels');
+    }
+    throw new Error('Failed to get channels. Please try again.');
+  }
+};
+
+// Channel stats types and functions
+interface ChannelStats {
+  youtube_stats: {
+    total_subscribers: number;
+    total_views: number;
+    video_count: number;
+    period_views: number;
+    period_watch_time_minutes: number;
+    period_likes: number;
+    period_dislikes: number;
+    period_comments: number;
+    period_subscribers_gained: number;
+    period_subscribers_lost: number;
+  };
+  calculated_stats: {
+    subscriber_growth_percentage: number;
+    views_growth_percentage: number;
+    watch_time_growth_percentage: number;
+    likes_growth_percentage: number;
+    dislikes_growth_percentage: number;
+    comments_growth_percentage: number;
+    total_watch_time_hours: number;
+    total_watch_time_days: number;
+    returning_viewers: number;
+    returning_viewers_growth_percentage: number;
+    unique_viewers: number;
+    unique_viewers_growth_percentage: number;
+  };
+  start_date: string | null;
+  end_date: string | null;
+}
+
+interface ChannelStatsResponse {
+  success: boolean;
+  stats: ChannelStats;
+}
+
+export const getChannelStats = async (
+  channelId: string, 
+  startDate?: string, 
+  endDate?: string
+): Promise<ChannelStats> => {
+  try {
+    let url = `/channels/stats?channel_id=${channelId}`;
+    if (startDate) url += `&start_date=${startDate}`;
+    if (endDate) url += `&end_date=${endDate}`;
+
+    const response = await api.get<ChannelStatsResponse>(url);
+    if (response.data.success) {
+      return response.data.stats;
+    }
+    throw new Error('Failed to get channel stats');
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(error.response.data.message || 'Failed to get channel stats');
+    }
+    throw new Error('Failed to get channel stats. Please try again.');
+  }
+};
+
+export type { User, AuthResponse, LoginParams, SignupParams, ProfileResponse, YouTubeAuthResponse, YouTubeCallbackParams, Channel, ChannelsResponse, ChannelStats, ChannelStatsResponse }; 
