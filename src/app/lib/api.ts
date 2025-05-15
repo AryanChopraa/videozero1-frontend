@@ -220,4 +220,41 @@ export const getChannelStats = async (
   }
 };
 
-export type { User, AuthResponse, LoginParams, SignupParams, ProfileResponse, YouTubeAuthResponse, YouTubeCallbackParams, Channel, ChannelsResponse, ChannelStats, ChannelStatsResponse }; 
+// Video types and functions
+interface Video {
+  id: string;
+  video_id: string;
+  channel_id: string;
+  title: string;
+  description: string;
+  thumbnail_url: string;
+  published_at: string;
+  duration: string;
+  view_count: number;
+  like_count: number;
+  comment_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface VideosResponse {
+  success: boolean;
+  videos: Video[];
+}
+
+export const getVideosByChannelId = async (channelId: string): Promise<Video[]> => {
+  try {
+    const response = await api.get<VideosResponse>(`/videos/by-channel/${channelId}`);
+    if (response.data.success) {
+      return response.data.videos;
+    }
+    throw new Error('Failed to get videos');
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(error.response.data.message || 'Failed to get videos');
+    }
+    throw new Error('Failed to get videos. Please try again.');
+  }
+};
+
+export type { User, AuthResponse, LoginParams, SignupParams, ProfileResponse, YouTubeAuthResponse, YouTubeCallbackParams, Channel, ChannelsResponse, ChannelStats, ChannelStatsResponse, Video, VideosResponse }; 

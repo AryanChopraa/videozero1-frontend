@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { login as apiLogin, signup as apiSignup, getUserData, getChannels, User, AuthResponse, Channel } from './api';
+import { login as apiLogin, signup as apiSignup, getUserData, getChannels, getVideosByChannelId, User, AuthResponse, Channel, Video } from './api';
 
 interface LoginParams {
   email: string;
@@ -32,13 +32,17 @@ interface FilterState {
   customStartDate: string | null;
   customEndDate: string | null;
   channels: Channel[];
+  videos: Video[];
   isLoading: boolean;
+  isLoadingVideos: boolean;
   error: string | null;
+  videoError: string | null;
   setSelectedChannel: (channelId: string) => void;
   setDateRange: (dateRange: string) => void;
   setStatType: (statType: string) => void;
   setCustomDateRange: (startDate: string, endDate: string) => void;
   fetchChannels: () => Promise<void>;
+  fetchVideos: (channelId?: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -154,8 +158,11 @@ export const useFilterStore = create<FilterState>()(
       customStartDate: null,
       customEndDate: null,
       channels: [],
+      videos: [],
       isLoading: false,
+      isLoadingVideos: false,
       error: null,
+      videoError: null,
       
       setSelectedChannel: (channelId: string) => set({ selectedChannel: channelId }),
       setDateRange: (dateRange: string) => set({ dateRange }),
@@ -178,6 +185,46 @@ export const useFilterStore = create<FilterState>()(
           set({ 
             isLoading: false, 
             error: error instanceof Error ? error.message : 'Failed to fetch channels' 
+          });
+        }
+      },
+      
+      fetchVideos: async (channelId?: string) => {
+        const state = get();
+        if (state.isLoadingVideos) return;
+        
+        // Use provided channelId or fallback to selectedChannel from state
+        const targetChannelId = channelId || state.selectedChannel;
+        
+        // Skip if no channel selected or 'all' is selected
+        if (!targetChannelId || targetChannelId === 'all') {
+          set({ videos: [], isLoadingVideos: false });
+          return;
+        }
+        
+        // Find the channel object to get the YouTube channel_id
+        const selectedChannelObj = state.channels.find(channel => channel.id === targetChannelId);
+        if (!selectedChannelObj) {
+          set({ 
+            isLoadingVideos: false, 
+            videoError: 'Selected channel not found',
+            videos: []
+          });
+          return;
+        }
+        
+        // Get the actual YouTube channel_id needed for the API
+        const youtubeChannelId = selectedChannelObj.channel_id;
+        
+        set({ isLoadingVideos: true, videoError: null });
+        try {
+          const videosData = await getVideosByChannelId(youtubeChannelId);
+          set({ videos: videosData, isLoadingVideos: false });
+        } catch (error) {
+          set({ 
+            isLoadingVideos: false, 
+            videoError: error instanceof Error ? error.message : 'Failed to fetch videos',
+            videos: []
           });
         }
       }

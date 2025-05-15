@@ -3,11 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore, useFilterStore } from '../lib/store';
-import Sidebar from '../components/Sidebar';
-import Header from '../components/Header';
+import Layout from '../components/Layout';
 import StatsCards from '../components/StatsCards';
 import VideoStatistics from '../components/VideoStatistics';
-
+import Header from '../components/Header';
 export default function Dashboard() {
   const router = useRouter();
   const { user, loading, isAuthenticated, logout, fetchUserProfile } = useAuthStore();
@@ -70,13 +69,12 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1">
+    <Layout>
+      <div className="p-6">
         <Header />
         <StatsCards />
         <VideoStatistics />
       </div>
-    </div>
+    </Layout>
   );
 } 
