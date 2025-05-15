@@ -105,7 +105,7 @@ export default function Header() {
 
   return (
     <>
-      <div className="bg-white p-6 border-b border-gray-200 flex justify-between items-center">
+      <div className="bg-white p-6 flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
           <p className="text-sm text-gray-500">summarized video statistics</p>

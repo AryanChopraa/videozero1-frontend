@@ -34,51 +34,69 @@ export default function VideoCard({
     : '';
 
   return (
-    <div className={`bg-white rounded-lg overflow-hidden ${className}`}>
-      <div className="relative">
-        <div className="mb-3 bg-gray-200 rounded-lg w-full aspect-video relative overflow-hidden">
-          <img 
-            src={video.thumbnail_url} 
-            alt={video.title}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+    <div className={`rounded-lg overflow-hidden ${className} border border-[#E0E0E0] h-full flex flex-col`}>
+      {/* First main div: thumbnail, logo, channel name, and title */}
+      <div className="bg-[#F6F6F6] p-3">
+        <div className="relative">
+          <div className="w-full aspect-video relative overflow-hidden rounded-lg">
+            <img 
+              src={video.thumbnail_url} 
+              alt={video.title}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/40"></div>
+            
+            {showDuration && (
+              <div className="absolute right-2 top-2 bg-yellow-500 text-black text-xs font-bold px-2 py-1 rounded">
+                {formattedDuration}
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <div className="pt-4 px-2">
+          <div className="flex items-center mb-2">
+            <span className="inline-block w-5 h-5 mr-2 bg-blue-500 rounded-full flex-shrink-0"></span>
+            <span className="text-sm text-gray-700 font-medium">{channelName || video.channel_id}</span>
+          </div>
           
-          {showDuration && (
-            <div className="absolute right-2 top-2 bg-black text-white text-xs px-2 py-1 rounded">
-              {formattedDuration}
-            </div>
-          )}
+          <div className="mb-3 text-black font-bold text-md h-12 line-clamp-2">{video.title}</div>
         </div>
       </div>
       
-      <div className="p-4">
-        <div className="flex items-center mb-2">
-          <span className="inline-block w-4 h-4 mr-2 bg-blue-500 rounded-full"></span>
-          <span className="text-xs text-gray-500">{channelName || video.channel_id}</span>
+      {/* Second main div: metrics */}
+      <div className="px-2 pt-2 pb-3 bg-white border-t border-[#E0E0E0]">
+        <div className="grid grid-cols-4 gap-1">
+          <div className="text-gray-500 text-[10px] text-center whitespace-nowrap">Total Views</div>
+          <div className="text-gray-500 text-[10px] text-center whitespace-nowrap">Total Likes</div>
+          <div className="text-gray-500 text-[10px] text-center whitespace-nowrap">Total Comments</div>
+          <div className="text-gray-500 text-[10px] text-center whitespace-nowrap">Duration</div>
         </div>
-        
-        <div className="text-sm mb-4 font-medium line-clamp-2">{video.title}</div>
-        
-        <div className="grid grid-cols-4 gap-2 text-xs">
-          <div>
-            <div className="text-gray-500">Total Views</div>
-            <div className="font-bold">{video.view_count.toLocaleString()}</div>
+        <div className="grid grid-cols-4 gap-1">
+          <div className="font-bold text-gray-900 text-base text-center">
+            {(video.view_count >= 1000000) 
+              ? `${(video.view_count / 1000000).toFixed(1)}M` 
+              : (video.view_count >= 1000) 
+                ? `${(video.view_count / 1000).toFixed(0)}K` 
+                : video.view_count.toLocaleString()}
           </div>
-          <div>
-            <div className="text-gray-500">Total Likes</div>
-            <div className="font-bold">{Math.floor(video.like_count/10)}K</div>
+          <div className="font-bold text-gray-900 text-base text-center">
+            {video.like_count >= 1000 
+              ? `${(video.like_count / 1000).toFixed(0)}K`
+              : video.like_count}
           </div>
-          <div>
-            <div className="text-gray-500">Total Comments</div>
-            <div className="font-bold">{Math.floor(video.comment_count*3)}K</div>
+          <div className="font-bold text-gray-900 text-base text-center">
+            {video.comment_count >= 1000 
+              ? `${(video.comment_count / 1000).toFixed(0)}K` 
+              : video.comment_count}
           </div>
-          <div>
-            <div className="text-gray-500">Total Shares</div>
-            <div className="font-bold">{Math.floor(video.view_count/20)}M</div>
+          <div className="font-bold text-gray-900 text-base text-center">
+            {formattedDuration}
           </div>
         </div>
       </div>
     </div>
   );
 } 
+
+

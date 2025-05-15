@@ -168,7 +168,7 @@ export default function StatsCards() {
 
   return (
     <div className="p-6">
-      <div className="bg-white p-6 rounded-lg grid grid-cols-4 gap-6">
+      <div className="bg-[#F6F6F6] px-10 py-14 rounded-lg grid grid-cols-4 gap-6 border border-[#E0E0E0]">
         {/* Total Subscribers */}
         <div className="border-r border-gray-200 pr-6">
           <div className="text-sm text-gray-500 mb-2">Total Subscribers</div>

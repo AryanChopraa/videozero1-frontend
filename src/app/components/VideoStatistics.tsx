@@ -69,7 +69,7 @@ export default function VideoStatistics() {
               key={video.id} 
               video={video} 
               channelName="zerodhaofficial"
-              className="p-4"
+              className=""
             />
           ))}
         </div>
