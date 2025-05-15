@@ -47,33 +47,33 @@ export default function ChannelSelector({ className = '' }: ChannelSelectorProps
     <div className={`relative ${className}`} ref={dropdownRef}>
       {/* Dropdown header */}
       <div 
-        className="flex items-center justify-between bg-gray-100 rounded-md py-3 px-4 cursor-pointer"
+        className="flex items-center justify-between bg-gray-100 rounded-md py-2 px-3 cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span className="font-medium text-gray-800">{getHeaderText()}</span>
-        {isOpen ? <FiChevronUp className="h-5 w-5" /> : <FiChevronDown className="h-5 w-5" />}
+        <span className="font-semibold text-gray-800 text-xs items-center flex">{getHeaderText()}</span>
+        {isOpen ? <FiChevronUp className="h-4 w-4" /> : <FiChevronDown className="h-4 w-4" />}
       </div>
 
       {/* Dropdown menu */}
       {isOpen && (
-        <div className="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg border border-gray-200 max-h-96 overflow-y-auto">
+        <div className="fixed z-50 mt-1 w-64 bg-gray-50 rounded-md shadow-lg border border-gray-200 max-h-96 overflow-y-auto" style={{ top: dropdownRef.current ? dropdownRef.current.getBoundingClientRect().bottom + window.scrollY : 0, left: dropdownRef.current ? dropdownRef.current.getBoundingClientRect().left + window.scrollX : 0 }}>
           {channels.length > 0 ? (
             channels.map((channel) => (
               <div 
                 key={channel.id} 
-                className="flex items-center justify-between p-3 hover:bg-gray-50 cursor-pointer"
+                className="flex items-center justify-between p-3 hover:bg-gray-100 cursor-pointer"
                 onClick={() => toggleChannel(channel.id)}
               >
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-3 justify-center">
                   {/* Channel logo */}
                   <div className="w-8 h-8 flex-shrink-0 overflow-hidden rounded">
                     {channel.thumbnail_url ? (
                       <Image 
                         src={channel.thumbnail_url} 
                         alt={channel.title} 
-                        width={32} 
-                        height={32}
-                        className="object-cover"
+                        width={30} 
+                        height={30}
+                        className="object-cover rounded-md border border-gray-200"
                       />
                     ) : (
                       <div className="w-8 h-8 bg-gray-200 flex items-center justify-center">
@@ -81,20 +81,22 @@ export default function ChannelSelector({ className = '' }: ChannelSelectorProps
                       </div>
                     )}
                   </div>
-                  <span className="text-sm font-medium">{channel.title}</span>
+                  <span className="text-xs font-medium">{channel.title}</span>
                 </div>
                 {/* Checkbox */}
-                <div className={`w-6 h-6 flex items-center justify-center rounded-md border ${
-                  selectedChannels.includes(channel.id) ? 'bg-blue-500 border-blue-500' : 'border-gray-300'
+                <div className={`w-5 h-5 flex-shrink-0 flex items-center justify-center rounded-md border ${
+                  selectedChannels.includes(channel.id) 
+                    ? 'bg-white border-gray-300' 
+                    : 'border-gray-300 bg-white'
                 }`}>
-                  {selectedChannels.includes(channel.id) && <FiCheck className="text-white" />}
+                  {selectedChannels.includes(channel.id) && <FiCheck className="text-black w-4 h-4" />}
                 </div>
               </div>
             ))
           ) : !isLoading ? (
-            <div className="p-3 text-center text-gray-500">No channels available</div>
+            <div className="p-3 text-center text-gray-500 text-xs">No channels available</div>
           ) : (
-            <div className="p-3 text-center text-gray-500">Loading channels...</div>
+            <div className="p-3 text-center text-gray-500 text-xs">Loading channels...</div>
           )}
         </div>
       )}

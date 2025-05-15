@@ -1,10 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
-import { FiCalendar, FiChevronDown, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiChevronDown, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { useFilterStore } from '../lib/store';
+import Image from 'next/image';
 
 interface DateRangeSelectorProps {
   className?: string;
 }
+
+// Helper function to format a Date object to YYYY-MM-DD string based on local date parts
+const formatDateToYyyyMmDd = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0'); // getMonth is 0-indexed
+  const dayOfMonth = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${dayOfMonth}`;
+};
 
 export default function DateRangeSelector({ className = '' }: DateRangeSelectorProps) {
   const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
@@ -26,23 +35,26 @@ export default function DateRangeSelector({ className = '' }: DateRangeSelectorP
   useEffect(() => {
     // Set local state from store when custom dates exist
     if (customStartDate && customEndDate && dateRange === 'custom') {
+      const startDateObj = new Date(customStartDate);
+      const endDateObj = new Date(customEndDate);
+
       setStartDate(customStartDate);
       setEndDate(customEndDate);
       
-      const startDateObj = new Date(customStartDate);
-      const endDateObj = new Date(customEndDate);
+      // Set currentMonth to the month of the startDate so calendar opens to it
+      setCurrentMonth(new Date(startDateObj.getFullYear(), startDateObj.getMonth(), 1));
       
-      if (startDateObj.getMonth() === currentMonth.getMonth() && 
-          startDateObj.getFullYear() === currentMonth.getFullYear()) {
-        setSelectedStartDay(startDateObj.getDate());
-      }
-      
-      if (endDateObj.getMonth() === currentMonth.getMonth() && 
-          endDateObj.getFullYear() === currentMonth.getFullYear()) {
-        setSelectedEndDay(endDateObj.getDate());
-      }
+      // These will be set by generateCalendar based on startDate and endDate
+      // setSelectedStartDay(startDateObj.getDate());
+      // setSelectedEndDay(endDateObj.getDate());
+
+    } else if (dateRange === 'allTime') {
+      setStartDate('');
+      setEndDate('');
+      setSelectedStartDay(null);
+      setSelectedEndDay(null);
     }
-  }, [customStartDate, customEndDate, dateRange, currentMonth]);
+  }, [customStartDate, customEndDate, dateRange, setCustomDateRange]); // Added setCustomDateRange for completeness, though not directly used here for setting
 
   useEffect(() => {
     // Close date dropdown when clicking outside
@@ -74,28 +86,35 @@ export default function DateRangeSelector({ className = '' }: DateRangeSelectorP
     setIsDateDropdownOpen(false);
   };
 
-  const handleDayClick = (day: number) => {
-    const selectedDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-    const formattedDate = selectedDate.toISOString().split('T')[0];
+  const handleStartDateClick = () => {
+    // No action needed, calendar interaction drives selection
+  };
+
+  const handleEndDateClick = () => {
+    // No action needed, calendar interaction drives selection
+  };
+
+  const handleDayClick = (day: number, date: Date) => {
+    const formattedDate = date.toISOString().split('T')[0];
     
     if (!startDate || (startDate && endDate)) {
-      // Start new selection
+      // Either no start date yet, or both are set (so, reset)
       setStartDate(formattedDate);
-      setEndDate('');
       setSelectedStartDay(day);
+      setEndDate('');
       setSelectedEndDay(null);
-    } else {
-      // Complete selection
+    } else if (startDate && !endDate) {
+      // Start date is set, now setting end date
       const startDateObj = new Date(startDate);
-      if (selectedDate >= startDateObj) {
+      if (date < startDateObj) {
+        // Selected end date is before start date, so make this the new start date
+        setStartDate(formattedDate);
+        setSelectedStartDay(day);
+        setEndDate('');
+        setSelectedEndDay(null);
+      } else {
         setEndDate(formattedDate);
         setSelectedEndDay(day);
-      } else {
-        // If clicked date is before start date, swap them
-        setEndDate(startDate);
-        setStartDate(formattedDate);
-        setSelectedEndDay(selectedStartDay);
-        setSelectedStartDay(day);
       }
     }
   };
@@ -121,40 +140,43 @@ export default function DateRangeSelector({ className = '' }: DateRangeSelectorP
     // Adjust Sunday (0) to be 7 for easier calculation
     const adjustedFirstDay = firstDay === 0 ? 7 : firstDay;
     
-    const days = [];
+    const daysArray = [];
     
     // Add days from previous month if needed (to fill the first week)
     const prevMonthLastDate = new Date(year, month, 0).getDate();
     for (let i = 1; i < adjustedFirstDay; i++) {
-      days.push({
+      daysArray.push({
         day: prevMonthLastDate - adjustedFirstDay + i + 1,
         isCurrentMonth: false,
-        isPast: true
+        date: new Date(year, month - 1, prevMonthLastDate - adjustedFirstDay + i + 1)
       });
     }
     
     // Add days of current month
     for (let i = 1; i <= lastDate; i++) {
-      days.push({
+      const date = new Date(year, month, i);
+      const dateString = formatDateToYyyyMmDd(date);
+      
+      daysArray.push({
         day: i,
         isCurrentMonth: true,
-        isSelected: i === selectedStartDay || i === selectedEndDay ||
-                    (selectedStartDay && selectedEndDay && i > selectedStartDay && i < selectedEndDay)
+        date: date,
+        isStartDate: startDate && dateString === startDate,
+        isEndDate: endDate && dateString === endDate
       });
     }
     
     // Add days from next month if needed (to fill the last week)
-    const totalDaysToShow = 42; // 6 weeks × 7 days
-    const nextMonthDays = totalDaysToShow - days.length;
-    for (let i = 1; i <= nextMonthDays; i++) {
-      days.push({
+    const remainingDays = (6 * 7) - daysArray.length;
+    for (let i = 1; i <= remainingDays; i++) {
+      daysArray.push({
         day: i,
         isCurrentMonth: false,
-        isFuture: true
+        date: new Date(year, month + 1, i)
       });
     }
     
-    return days;
+    return daysArray;
   };
 
   // Get the current display label for the date dropdown
@@ -172,103 +194,136 @@ export default function DateRangeSelector({ className = '' }: DateRangeSelectorP
     return 'All time';
   };
 
+  // Format date for display in the input field
+  const formatDateForDisplay = (dateStr: string) => {
+    if (!dateStr) return '';
+    try {
+      // dateStr is "YYYY-MM-DD". Split it to get parts.
+      const [year, month, day] = dateStr.split('-').map(Number);
+      // Create a date object. JS months are 0-indexed.
+      // This date will be for 00:00:00 in the local timezone.
+      const date = new Date(year, month - 1, day);
+      return date.toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric'
+      });
+    } catch (e) {
+      console.error("Error formatting date for display:", dateStr, e);
+      return dateStr; // Fallback to raw string if formatting fails
+    }
+  };
+
   const days = generateCalendar();
   const weekDays = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June', 
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
 
   return (
     <div className={`relative ${className}`} ref={dateDropdownRef}>
       <div 
-        className="flex items-center justify-between bg-white border border-gray-300 rounded-md py-2 px-3 w-64 cursor-pointer"
+        className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-md py-1.5 px-2 w-52 cursor-pointer"
         onClick={() => setIsDateDropdownOpen(!isDateDropdownOpen)}
       >
         <div className="flex items-center space-x-2">
-          <FiCalendar className="text-gray-500" />
-          <span className="text-sm">{getCurrentDateRangeLabel()}</span>
+          <Image src="/icons/calender.svg" alt="Calendar" width={16} height={16} />
+          <span className="text-xs font-semibold">{getCurrentDateRangeLabel()}</span>
         </div>
-        <FiChevronDown className="h-4 w-4 text-gray-500" />
+        <FiChevronDown className="h-3 w-3 text-gray-500" />
       </div>
       
       {isDateDropdownOpen && (
-        <div className="absolute top-full left-0 mt-1 bg-white shadow-lg rounded-md border border-gray-200 py-2 z-10 w-96">          
-          <div className="p-4">
-            <div className="mb-2 text-xs font-medium text-gray-500">Custom date range</div>
-            
-            <div className="flex flex-wrap items-center gap-3 mb-4">
-              <div className="flex-1 min-w-[150px]">
-                <label className="block text-xs text-gray-500 mb-1">Start date</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full appearance-none bg-white border border-gray-300 rounded-md py-2 px-3 text-sm"
-                />
-              </div>
-              <div className="flex-1 min-w-[150px]">
-                <label className="block text-xs text-gray-500 mb-1">End date</label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full appearance-none bg-white border border-gray-300 rounded-md py-2 px-3 text-sm"
-                />
+        <div className="fixed z-50 mt-1 bg-white shadow-lg rounded-md border border-gray-200 p-4 w-[300px]" style={{ 
+          top: dateDropdownRef.current ? dateDropdownRef.current.getBoundingClientRect().bottom + window.scrollY : 0, 
+          left: dateDropdownRef.current ? Math.max(0, dateDropdownRef.current.getBoundingClientRect().left + window.scrollX - 100) : 0 
+        }}>          
+          <div className="flex gap-2 mb-4">
+            <div 
+              className={`flex-1 relative rounded-md border border-gray-200 px-3 py-2 cursor-default`}
+              onClick={handleStartDateClick}
+            >
+              <div className="flex items-center justify-between">
+                <span className={`text-sm ${startDate ? '' : 'text-gray-400'}`}>
+                  {startDate ? formatDateForDisplay(startDate) : 'Start date'}
+                </span>
+                <Image src="/icons/calender.svg" alt="Calendar" width={18} height={18} />
               </div>
             </div>
             
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-lg font-medium">
-                  {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={previousMonth} className="p-1 rounded-full hover:bg-gray-100">
-                    <FiChevronLeft className="w-5 h-5" />
-                  </button>
-                  <button onClick={nextMonth} className="p-1 rounded-full hover:bg-gray-100">
-                    <FiChevronRight className="w-5 h-5" />
-                  </button>
-                </div>
+            <div 
+              className={`flex-1 relative rounded-md border border-gray-200 px-3 py-2 cursor-default`}
+              onClick={handleEndDateClick}
+            >
+              <div className="flex items-center justify-between">
+                <span className={`text-sm ${endDate ? '' : 'text-gray-400'}`}>
+                  {endDate ? formatDateForDisplay(endDate) : 'End date'}
+                </span>
+                <Image src="/icons/calender.svg" alt="Calendar" width={18} height={18} />
+              </div>
+            </div>
+          </div>
+          
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <div 
+                className="flex items-center gap-1 cursor-pointer" 
+              >
+                <span className="text-base font-medium">
+                  {currentMonth.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                </span>
               </div>
               
-              <div className="grid grid-cols-7 gap-1">
-                {weekDays.map(day => (
-                  <div key={day} className="text-center py-1 text-sm font-medium text-gray-500">
-                    {day}
-                  </div>
-                ))}
-                
-                {days.map((day, index) => (
-                  <div 
-                    key={index}
-                    onClick={() => day.isCurrentMonth && handleDayClick(day.day)}
-                    className={`
-                      text-center py-2 text-sm rounded-md cursor-pointer
-                      ${!day.isCurrentMonth ? 'text-gray-300' : 'hover:bg-gray-100'}
-                      ${day.isSelected ? 'bg-gray-200' : ''}
-                      ${day.day === selectedStartDay || day.day === selectedEndDay ? 'bg-black text-white' : ''}
-                    `}
-                  >
-                    {day.day}
-                  </div>
-                ))}
+              <div className="flex gap-2">
+                <button onClick={previousMonth} className="p-1 rounded-full hover:bg-gray-100">
+                  <FiChevronLeft className="w-4 h-4" />
+                </button>
+                <button onClick={nextMonth} className="p-1 rounded-full hover:bg-gray-100">
+                  <FiChevronRight className="w-4 h-4" />
+                </button>
               </div>
             </div>
             
-            <div className="w-full mt-4">
-              <button
-                onClick={applyCustomDateRange}
-                className="bg-black text-white py-2 rounded-md text-sm w-full"
-              >
-                Apply
-              </button>
+            <div className="grid grid-cols-7 gap-1">
+              {weekDays.map(day => (
+                <div key={day} className="text-center py-1 text-sm font-medium text-gray-500">
+                  {day}
+                </div>
+              ))}
+              
+              {days.map((day, index) => (
+                <div 
+                  key={index}
+                  onClick={() => day.isCurrentMonth && handleDayClick(day.day, day.date)}
+                  className={`
+                    text-center py-1.5 text-sm rounded-md cursor-pointer
+                    ${!day.isCurrentMonth ? 'text-gray-300' : 'hover:bg-gray-100'}
+                    ${(day.isStartDate || day.isEndDate) ? 'bg-black text-white' : ''}
+                  `}
+                >
+                  {day.day}
+                </div>
+              ))}
             </div>
-            <div className="flex justify-center mt-3">
-              <span 
-                onClick={resetToAllTime}
-                className="text-sm text-blue-600 underline cursor-pointer"
-              >
-                Reset to all time
-              </span>
-            </div>
+          </div>
+          
+          <button
+            onClick={applyCustomDateRange}
+            disabled={!startDate || !endDate}
+            className={`
+              py-2 rounded-md text-sm w-full
+              ${(!startDate || !endDate) ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800'}
+            `}
+          >
+            Apply
+          </button>
+          
+          <div className="flex justify-center mt-3">
+            <span 
+              onClick={resetToAllTime}
+              className="text-xs text-blue-600 underline cursor-pointer"
+            >
+              Reset to all time
+            </span>
           </div>
         </div>
       )}
