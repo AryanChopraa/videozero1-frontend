@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { FiLogOut } from 'react-icons/fi';
+import Image from 'next/image';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -24,7 +25,7 @@ export default function Navbar() {
     <div className="w-full h-14 bg-black flex justify-between items-center px-6">
       {/* Left - Logo */}
       <div className="flex items-center">
-        <span className="text-white text-2xl font-bold">τ</span>
+        <Image src="/icons/Logo.svg" alt="Logo" width={24} height={24} />
       </div>
       
       {/* Middle - Page Title */}
@@ -35,7 +36,7 @@ export default function Navbar() {
       {/* Right - Company Name and Logout */}
       <div className="flex items-center space-x-3">
         <span className="text-white">zerodha</span>
-        <span className="text-white mr-1">|&gt;</span>
+        <FiLogOut className="text-white" />
       </div>
     </div>
   );

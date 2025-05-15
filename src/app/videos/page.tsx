@@ -7,6 +7,9 @@ import { useRouter } from "next/navigation";
 import Layout from "../components/Layout";
 import Link from "next/link";
 import VideoCard from "../components/VideoCard";
+import ChannelSelector from "../components/ChannelSelector";
+import DateRangeSelector from "../components/DateRangeSelector";
+import SortSelector from "../components/SortSelector";
 
 export default function VideosPage() {
   const router = useRouter();
@@ -15,8 +18,7 @@ export default function VideosPage() {
   const profileFetched = useRef(false);
   
   const { 
-    selectedChannel,
-    setSelectedChannel,
+    selectedChannels,
     dateRange,
     setDateRange,
     videos,
@@ -27,6 +29,14 @@ export default function VideosPage() {
   } = useFilterStore();
 
   const [sortBy, setSortBy] = useState("views");
+  
+  const sortOptions = [
+    { value: "views", label: "Most views" },
+    { value: "likes", label: "Most likes" },
+    { value: "comments", label: "Most comments" },
+    { value: "newest", label: "Newest first" },
+    { value: "oldest", label: "Oldest first" }
+  ];
 
   // Handle hydration mismatch by confirming client-side rendering is complete
   useEffect(() => {
@@ -55,12 +65,12 @@ export default function VideosPage() {
   }, [isAuthenticated, loading, router, fetchUserProfile, isClientLoaded]);
 
   useEffect(() => {
-    // Check if channels are available
-    if (channels.length > 0 && selectedChannel && selectedChannel !== 'all') {
-      // Fetch videos when selectedChannel changes
+    // Check if channels are available and at least one channel is selected
+    if (channels.length > 0 && selectedChannels.length > 0) {
+      // Fetch videos when selectedChannels or dateRange changes
       fetchVideos();
     }
-  }, [selectedChannel, channels, fetchVideos]);
+  }, [selectedChannels, dateRange, channels, fetchVideos]);
 
   // Sort videos based on selected sort criteria
   const sortedVideos = [...videos].sort((a, b) => {
@@ -94,66 +104,27 @@ export default function VideosPage() {
     return null;
   }
 
+  // Channel selection message for the header
+  const channelSelectionMessage = 
+    selectedChannels.length === 1 
+      ? `for ${channels.find(c => c.id === selectedChannels[0])?.title || "selected channel"}`
+      : selectedChannels.length > 1 
+        ? `across ${selectedChannels.length} channels` 
+        : "";
+
   return (
     <Layout>
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Video statistics</h1>
           <div className="flex space-x-4">
-            <div className="relative">
-              <select 
-                className="appearance-none bg-white border border-gray-300 rounded-md px-4 py-2 pr-8 text-sm"
-                value={selectedChannel}
-                onChange={(e) => setSelectedChannel(e.target.value)}
-              >
-                <option value="all">All channels</option>
-                {channels.map(channel => (
-                  <option key={channel.id} value={channel.id}>
-                    {channel.title}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                  <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
-                </svg>
-              </div>
-            </div>
-            <div className="relative">
-              <select 
-                className="appearance-none bg-white border border-gray-300 rounded-md px-4 py-2 pr-8 text-sm"
-                value={dateRange}
-                onChange={(e) => setDateRange(e.target.value)}
-              >
-                <option value="allTime">Jan 1, 2023 - May 2, 2025</option>
-                <option value="last30days">Last 30 days</option>
-                <option value="last90days">Last 90 days</option>
-                <option value="last12months">Last year</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                  <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
-                </svg>
-              </div>
-            </div>
-            <div className="relative">
-              <select 
-                className="appearance-none bg-white border border-gray-300 rounded-md px-4 py-2 pr-8 text-sm"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                <option value="views">Most views</option>
-                <option value="likes">Most likes</option>
-                <option value="comments">Most comments</option>
-                <option value="newest">Newest first</option>
-                <option value="oldest">Oldest first</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                  <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
-                </svg>
-              </div>
-            </div>
+            <ChannelSelector />
+            <DateRangeSelector />
+            <SortSelector 
+              value={sortBy}
+              onChange={setSortBy}
+              options={sortOptions}
+            />
           </div>
         </div>
         
@@ -163,9 +134,9 @@ export default function VideosPage() {
           <div className="text-center text-red-500 py-20">{videoError}</div>
         ) : videos.length === 0 ? (
           <div className="text-center py-20">
-            {selectedChannel === 'all' ? 
-              'Please select a specific channel to view videos' : 
-              'No videos found for this channel'}
+            {selectedChannels.length === 0 ? 
+              'Please select at least one channel to view videos' : 
+              'No videos found for selected channels'}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -173,6 +144,7 @@ export default function VideosPage() {
               <VideoCard 
                 key={video.id} 
                 video={video} 
+                channelName={channels.find(c => c.channel_id === video.channel_id)?.title || "Unknown"}
                 showDuration={true}
                 className="shadow"
               />

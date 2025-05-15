@@ -26,7 +26,7 @@ interface AuthState {
 }
 
 interface FilterState {
-  selectedChannel: string;
+  selectedChannels: string[];
   dateRange: string;
   statType: string;
   customStartDate: string | null;
@@ -37,12 +37,13 @@ interface FilterState {
   isLoadingVideos: boolean;
   error: string | null;
   videoError: string | null;
-  setSelectedChannel: (channelId: string) => void;
+  setSelectedChannels: (channelIds: string[]) => void;
+  toggleChannel: (channelId: string) => void;
   setDateRange: (dateRange: string) => void;
   setStatType: (statType: string) => void;
   setCustomDateRange: (startDate: string, endDate: string) => void;
   fetchChannels: () => Promise<void>;
-  fetchVideos: (channelId?: string) => Promise<void>;
+  fetchVideos: (channelIds?: string[]) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -152,7 +153,7 @@ export const useAuthStore = create<AuthState>()(
 export const useFilterStore = create<FilterState>()(
   persist(
     (set, get) => ({
-      selectedChannel: 'all',
+      selectedChannels: [],
       dateRange: 'last30days',
       statType: 'total',
       customStartDate: null,
@@ -164,7 +165,17 @@ export const useFilterStore = create<FilterState>()(
       error: null,
       videoError: null,
       
-      setSelectedChannel: (channelId: string) => set({ selectedChannel: channelId }),
+      setSelectedChannels: (channelIds: string[]) => set({ selectedChannels: channelIds }),
+      
+      toggleChannel: (channelId: string) => set((state) => {
+        const isSelected = state.selectedChannels.includes(channelId);
+        if (isSelected) {
+          return { selectedChannels: state.selectedChannels.filter(id => id !== channelId) };
+        } else {
+          return { selectedChannels: [...state.selectedChannels, channelId] };
+        }
+      }),
+      
       setDateRange: (dateRange: string) => set({ dateRange }),
       setStatType: (statType: string) => set({ statType }),
       setCustomDateRange: (startDate: string, endDate: string) => set({ 
@@ -189,37 +200,36 @@ export const useFilterStore = create<FilterState>()(
         }
       },
       
-      fetchVideos: async (channelId?: string) => {
+      fetchVideos: async (channelIds?: string[]) => {
         const state = get();
         if (state.isLoadingVideos) return;
         
-        // Use provided channelId or fallback to selectedChannel from state
-        const targetChannelId = channelId || state.selectedChannel;
+        // Use provided channelIds or fallback to selectedChannels from state
+        const targetChannelIds = channelIds || state.selectedChannels;
         
-        // Skip if no channel selected or 'all' is selected
-        if (!targetChannelId || targetChannelId === 'all') {
+        // If no channels selected, return empty array
+        if (!targetChannelIds.length) {
           set({ videos: [], isLoadingVideos: false });
           return;
         }
         
-        // Find the channel object to get the YouTube channel_id
-        const selectedChannelObj = state.channels.find(channel => channel.id === targetChannelId);
-        if (!selectedChannelObj) {
-          set({ 
-            isLoadingVideos: false, 
-            videoError: 'Selected channel not found',
-            videos: []
-          });
-          return;
-        }
-        
-        // Get the actual YouTube channel_id needed for the API
-        const youtubeChannelId = selectedChannelObj.channel_id;
-        
         set({ isLoadingVideos: true, videoError: null });
+        
         try {
-          const videosData = await getVideosByChannelId(youtubeChannelId);
-          set({ videos: videosData, isLoadingVideos: false });
+          // Get videos for each selected channel and combine
+          const allVideos: Video[] = [];
+          
+          for (const channelId of targetChannelIds) {
+            // Find the channel object to get the YouTube channel_id
+            const selectedChannelObj = state.channels.find(channel => channel.id === channelId);
+            if (selectedChannelObj) {
+              const youtubeChannelId = selectedChannelObj.channel_id;
+              const channelVideos = await getVideosByChannelId(youtubeChannelId);
+              allVideos.push(...channelVideos);
+            }
+          }
+          
+          set({ videos: allVideos, isLoadingVideos: false });
         } catch (error) {
           set({ 
             isLoadingVideos: false, 
@@ -232,7 +242,7 @@ export const useFilterStore = create<FilterState>()(
     {
       name: 'filter-storage',
       partialize: (state) => ({
-        selectedChannel: state.selectedChannel,
+        selectedChannels: state.selectedChannels,
         dateRange: state.dateRange,
         statType: state.statType,
         customStartDate: state.customStartDate,

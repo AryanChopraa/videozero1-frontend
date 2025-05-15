@@ -6,7 +6,7 @@ import { getChannelStats, ChannelStats } from '../lib/api';
 
 export default function StatsCards() {
   const { 
-    selectedChannel, 
+    selectedChannels, 
     dateRange, 
     customStartDate, 
     customEndDate, 
@@ -14,14 +14,15 @@ export default function StatsCards() {
   } = useFilterStore();
   
   const [stats, setStats] = useState<ChannelStats | null>(null);
+  const [combinedStats, setCombinedStats] = useState<ChannelStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const fetchInProgress = useRef(false);
-  const lastFetchParams = useRef<{channel: string, dateRange: string, customStart?: string, customEnd?: string} | null>(null);
+  const lastFetchParams = useRef<{channels: string[], dateRange: string, customStart?: string, customEnd?: string} | null>(null);
   
   useEffect(() => {
-    // Skip if no channel selected or 'all' is selected
-    if (!selectedChannel || selectedChannel === 'all' || channels.length === 0) {
+    // Skip if no channels selected
+    if (selectedChannels.length === 0 || channels.length === 0) {
       setLoading(false);
       return;
     }
@@ -31,7 +32,7 @@ export default function StatsCards() {
     
     // Skip if we already fetched with the same parameters
     if (lastFetchParams.current && 
-        lastFetchParams.current.channel === selectedChannel && 
+        JSON.stringify(lastFetchParams.current.channels) === JSON.stringify(selectedChannels) && 
         lastFetchParams.current.dateRange === dateRange &&
         (dateRange !== 'custom' || 
           (lastFetchParams.current.customStart === customStartDate && 
@@ -47,26 +48,13 @@ export default function StatsCards() {
         
         // Store current fetch parameters
         lastFetchParams.current = {
-          channel: selectedChannel,
+          channels: [...selectedChannels],
           dateRange: dateRange,
           ...(dateRange === 'custom' && { 
             customStart: customStartDate || undefined, 
             customEnd: customEndDate || undefined 
           })
         };
-        
-        // Find the selected channel in the channels array to get the channel_id
-        const selectedChannelObj = channels.find(channel => channel.id === selectedChannel);
-        
-        if (!selectedChannelObj) {
-          setError('Selected channel not found');
-          setLoading(false);
-          fetchInProgress.current = false;
-          return;
-        }
-        
-        // Get the actual YouTube channel_id needed for the API
-        const youtubeChannelId = selectedChannelObj.channel_id;
         
         // Convert dateRange to actual dates
         let startDate, endDate;
@@ -108,13 +96,76 @@ export default function StatsCards() {
           console.log('All time range selected');
         }
 
-        console.log(`Fetching stats for channel ${selectedChannel} with date range ${dateRange}`);
+        console.log(`Fetching stats for ${selectedChannels.length} channels with date range ${dateRange}`);
         if (startDate && endDate) {
           console.log(`Date range: ${startDate} to ${endDate}`);
         }
-        
-        const statsData = await getChannelStats(youtubeChannelId, startDate, endDate);
-        setStats(statsData);
+
+        // If only one channel is selected, fetch its stats
+        if (selectedChannels.length === 1) {
+          const selectedChannelObj = channels.find(channel => channel.id === selectedChannels[0]);
+          
+          if (!selectedChannelObj) {
+            setError('Selected channel not found');
+            setLoading(false);
+            fetchInProgress.current = false;
+            return;
+          }
+          
+          // Get the actual YouTube channel_id needed for the API
+          const youtubeChannelId = selectedChannelObj.channel_id;
+          const statsData = await getChannelStats(youtubeChannelId, startDate, endDate);
+          setStats(statsData);
+          setCombinedStats(null);
+        } else {
+          // Multiple channels - fetch stats for each and combine
+          const allStats: ChannelStats[] = [];
+          let fetchError = null;
+
+          for (const channelId of selectedChannels) {
+            try {
+              const selectedChannelObj = channels.find(channel => channel.id === channelId);
+              if (selectedChannelObj) {
+                const youtubeChannelId = selectedChannelObj.channel_id;
+                const channelStats = await getChannelStats(youtubeChannelId, startDate, endDate);
+                allStats.push(channelStats);
+              }
+            } catch (err) {
+              fetchError = err;
+              console.error(`Error fetching stats for channel ${channelId}:`, err);
+            }
+          }
+
+          if (allStats.length === 0 && fetchError) {
+            throw fetchError;
+          }
+
+          // Combine stats from all channels
+          const combined = allStats.reduce((acc: ChannelStats | null, current: ChannelStats) => {
+            if (!acc) return current;
+            
+            return {
+              youtube_stats: {
+                total_subscribers: acc.youtube_stats.total_subscribers + current.youtube_stats.total_subscribers,
+                total_views: acc.youtube_stats.total_views + current.youtube_stats.total_views,
+                video_count: acc.youtube_stats.video_count + current.youtube_stats.video_count,
+                period_views: acc.youtube_stats.period_views + current.youtube_stats.period_views,
+                period_watch_time_minutes: acc.youtube_stats.period_watch_time_minutes + current.youtube_stats.period_watch_time_minutes,
+                period_likes: acc.youtube_stats.period_likes + current.youtube_stats.period_likes,
+                period_dislikes: acc.youtube_stats.period_dislikes + current.youtube_stats.period_dislikes,
+                period_subscribers_lost: acc.youtube_stats.period_subscribers_lost + current.youtube_stats.period_subscribers_lost,
+                period_comments: acc.youtube_stats.period_comments + current.youtube_stats.period_comments,
+                period_subscribers_gained: acc.youtube_stats.period_subscribers_gained + current.youtube_stats.period_subscribers_gained
+              },
+              calculated_stats: current.calculated_stats, // Just use the last one as these are ratios
+              start_date: acc.start_date, // Keep the original start_date
+              end_date: acc.end_date // Keep the original end_date
+            };
+          }, null as ChannelStats | null);
+
+          setCombinedStats(combined);
+          setStats(null);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch stats');
       } finally {
@@ -124,7 +175,7 @@ export default function StatsCards() {
     };
 
     fetchStats();
-  }, [selectedChannel, dateRange, customStartDate, customEndDate, channels]);
+  }, [selectedChannels, dateRange, customStartDate, customEndDate, channels]);
 
   if (loading) {
     return (
@@ -154,17 +205,24 @@ export default function StatsCards() {
     );
   }
 
-  if (!stats) {
+  if (!stats && !combinedStats) {
     return (
       <div className="p-6">
         <div className="bg-white p-6 rounded-lg">
-          <p className="text-center">Please select a channel to view stats</p>
+          <p className="text-center">Please select at least one channel to view stats</p>
         </div>
       </div>
     );
   }
 
-  const { youtube_stats, calculated_stats } = stats;
+  // Use either the combined stats or individual channel stats
+  const displayStats = combinedStats || stats;
+  
+  if (!displayStats) {
+    return null;
+  }
+
+  const { youtube_stats } = displayStats;
 
   return (
     <div className="p-6">
