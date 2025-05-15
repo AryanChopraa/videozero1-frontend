@@ -145,8 +145,7 @@ export default function VideosPage() {
                 key={video.id} 
                 video={video} 
                 channelName={channels.find(c => c.channel_id === video.channel_id)?.title || "Unknown"}
-                showDuration={true}
-                className="shadow"
+                channelThumbnail={channels.find(c => c.channel_id === video.channel_id)?.thumbnail_url || "/placeholder-channel.png"}
               />
             ))}
           </div>

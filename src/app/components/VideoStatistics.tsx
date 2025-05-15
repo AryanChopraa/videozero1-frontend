@@ -58,7 +58,7 @@ export default function VideoStatistics() {
         <h2 className="text-xl font-bold">
           Top Performing Videos 
         </h2>
-        <Link href="/videos" className="text-sm text-blue-600 hover:text-blue-800">
+        <Link href="/videos" className="text-sm hover:text-blue-800 underline">
           view all →
         </Link>
       </div>
@@ -80,6 +80,7 @@ export default function VideoStatistics() {
               key={video.id} 
               video={video} 
               channelName={channels.find(c => c.channel_id === video.channel_id)?.title || "Unknown"}
+              channelThumbnail={channels.find(c => c.channel_id === video.channel_id)?.thumbnail_url || "/placeholder-channel.png"}
               className=""
             />
           ))}

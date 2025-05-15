@@ -37,7 +37,7 @@ export default function Header() {
             className="flex items-center space-x-2 bg-black text-white px-4 py-2 rounded-md"
           >
             <FiPlus className="h-4 w-4" />
-            <span className="text-sm">Add new channel</span>
+            <span className="text-xs font-semibold">Add new channel</span>
           </button>
         </div>
       </div>

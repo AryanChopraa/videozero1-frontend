@@ -14,6 +14,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [orgName, setOrgName] = useState('');
   const [isClientLoaded, setIsClientLoaded] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Set client-side loaded flag
   useEffect(() => {
@@ -62,6 +63,10 @@ export default function Login() {
 
   const handleOrgNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setOrgName(e.target.value);
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -122,15 +127,25 @@ export default function Login() {
                     disabled={loading}
                     required
                   />
-                  <input
-                    type="password"
-                    placeholder="password"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-200"
-                    value={password}
-                    onChange={handlePasswordChange}
-                    disabled={loading}
-                    required
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="password"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-200"
+                      value={password}
+                      onChange={handlePasswordChange}
+                      disabled={loading}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={togglePasswordVisibility}
+                      className="absolute inset-y-0 right-0 px-3 flex items-center text-sm text-gray-600 hover:text-gray-800"
+                      disabled={loading}
+                    >
+                      {showPassword ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
                 </div>
                 
                 <button
@@ -164,15 +179,25 @@ export default function Login() {
                     disabled={loading}
                     required
                   />
-                  <input
-                    type="password"
-                    placeholder="password"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-200"
-                    value={password}
-                    onChange={handlePasswordChange}
-                    disabled={loading}
-                    required
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="password"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-200"
+                      value={password}
+                      onChange={handlePasswordChange}
+                      disabled={loading}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={togglePasswordVisibility}
+                      className="absolute inset-y-0 right-0 px-3 flex items-center text-sm text-gray-600 hover:text-gray-800"
+                      disabled={loading}
+                    >
+                      {showPassword ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
                 </div>
                 
                 <button
@@ -188,16 +213,16 @@ export default function Login() {
             )}
           </form>
           
-          <div className="relative my-6">
+          {/* <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center">
               <span className="bg-white px-2 text-sm text-gray-500">or</span>
             </div>
-          </div>
+          </div> */}
           
-          <button 
+          {/* <button 
             className={`w-full flex items-center justify-center py-3 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors ${
               loading ? 'opacity-70 cursor-not-allowed' : ''
             }`}
@@ -212,7 +237,7 @@ export default function Login() {
               className="mr-2"
             />
             <span>{isLoginModal ? 'sign in with google' : 'sign up with google'}</span>
-          </button>
+          </button> */}
           
           <p className="text-center text-sm text-gray-600 mt-4">
             {isLoginModal ? "Don't have an account?" : "Already have an account?"}{" "}

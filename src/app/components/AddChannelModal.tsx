@@ -30,30 +30,29 @@ export default function AddChannelModal({ isOpen, onClose }: AddChannelModalProp
   };
   
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-3xl overflow-hidden relative">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg w-full max-w-2xl overflow-hidden relative">
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 border border-gray-300 rounded-md p-1.5"
           disabled={isLoading}
         >
           <FiX className="w-6 h-6" />
         </button>
         
-        <div className="p-8">
-          <h2 className="text-2xl font-bold mb-2">Connect a YouTube Channel</h2>
-          <p className="text-gray-600 mb-6">Connect your channel to start analysing videos and audience insights.</p>
+        <div className="p-10">
+          <h2 className="text-3xl font-bold mb-2">Connect a YouTube Channel</h2>
+          <p className="text-gray-500 mb-6 font-semibold text-sm">Connect your channel to start analysing videos and audience insights.</p>
           
-          <div className="grid grid-cols-2 gap-6">
-            <div className="border rounded-lg p-6">
+          <div className="space-y-6">
+            <div className="bg-[#F6F6F6] border border-gray-200 rounded-lg p-8">
               <div className="flex justify-between mb-2">
-                <h3 className="font-semibold text-lg">Connect via Google</h3>
-                <span className="text-xs bg-gray-100 px-2 py-1 rounded-md text-gray-700 uppercase">Recommended</span>
+                <h3 className="font-semibold text-2xl">Connect via Google</h3>
               </div>
-              <p className="text-gray-600 text-sm mb-8">Sign in with your YouTube-linked Google account for detailed analytics.</p>
+              <p className="text-gray-600 text-sm mb-36 font-semibold">Sign in with your YouTube-linked Google account for detailed analytics.</p>
               
               <button 
-                className="w-full border border-gray-300 rounded-md py-3 flex items-center justify-center"
+                className="w-full border border-gray-300 rounded-md py-4 flex items-center justify-center bg-white"
                 onClick={handleGoogleSignIn}
                 disabled={isLoading}
               >
@@ -64,7 +63,7 @@ export default function AddChannelModal({ isOpen, onClose }: AddChannelModalProp
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <svg viewBox="0 0 24 24" width="18" height="18">
+                    <svg viewBox="0 0 24 24" width="32" height="32">
                       <path
                         fill="#4285F4"
                         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -82,33 +81,10 @@ export default function AddChannelModal({ isOpen, onClose }: AddChannelModalProp
                         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                       />
                     </svg>
-                    <span className="text-sm font-medium">sign in with google</span>
+                    <span className="text-md font-normal">sign in with google</span>
                   </div>
                 )}
               </button>
-            </div>
-            
-            <div className="border rounded-lg p-6">
-              <h3 className="font-semibold text-lg mb-2">Add channel link</h3>
-              <p className="text-gray-600 text-sm mb-8">Access surface-level data points like views, likes, and comments.</p>
-              
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="enter channel link"
-                  className="w-full border border-gray-300 rounded-md p-3 text-sm"
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  disabled={isLoading}
-                />
-                
-                <button 
-                  className="w-full bg-black text-white rounded-md py-3 text-sm font-medium"
-                  disabled={isLoading || !inputValue.trim()}
-                >
-                  continue
-                </button>
-              </div>
             </div>
           </div>
         </div>

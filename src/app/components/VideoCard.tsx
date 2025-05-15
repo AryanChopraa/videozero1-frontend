@@ -20,6 +20,7 @@ interface VideoCardProps {
   video: Video;
   showDuration?: boolean;
   channelName?: string;
+  channelThumbnail?: string;
   className?: string;
 }
 
@@ -27,6 +28,7 @@ export default function VideoCard({
   video, 
   showDuration = false, 
   channelName,
+  channelThumbnail,
   className = ""
 }: VideoCardProps) {
   const formattedDuration = video.duration
@@ -56,7 +58,11 @@ export default function VideoCard({
         
         <div className="pt-4 px-2">
           <div className="flex items-center mb-2">
-            <span className="inline-block w-5 h-5 mr-2 bg-blue-500 rounded-full flex-shrink-0"></span>
+            <img 
+              src={channelThumbnail} 
+              alt={channelName || video.channel_id}
+              className="w-5 h-5 mr-2 rounded-full flex-shrink-0 object-cover"
+            />
             <span className="text-sm text-gray-700 font-medium">{channelName || video.channel_id}</span>
           </div>
           

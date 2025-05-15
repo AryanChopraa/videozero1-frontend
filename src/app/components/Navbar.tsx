@@ -51,12 +51,12 @@ export default function Navbar() {
         
         {/* Middle - Page Title */}
         <div className="absolute left-1/2 transform -translate-x-1/2">
-          <span className="text-white font-medium">zero1{getTitle().toLowerCase()}</span>
+          <span className="text-white font-bold text-sm">{getTitle().toLowerCase()}</span>
         </div>
         
         {/* Right - Company Name and Logout */}
         <div className="flex items-center space-x-3">
-          <span className="text-white">zerodha</span>
+          <span className="text-white text-sm font-semibold">zerodha</span>
           <FiLogOut className="text-white cursor-pointer" onClick={openLogoutDialog} />
         </div>
       </div>
