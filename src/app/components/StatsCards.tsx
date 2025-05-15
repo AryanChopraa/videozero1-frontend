@@ -229,7 +229,7 @@ export default function StatsCards() {
       <div className="bg-[#F6F6F6] px-10 py-14 rounded-lg grid grid-cols-4 gap-6 border border-[#E0E0E0]">
         {/* Total Subscribers */}
         <div className="border-r border-gray-200 pr-6">
-          <div className="text-sm text-gray-500 mb-2">Total Subscribers</div>
+          <div className="text-sm text-gray-500 mb-2 font-semibold">Total Subscribers</div>
           <div className="flex items-end">
             <div className="text-3xl font-bold">{youtube_stats.total_subscribers.toLocaleString()}</div>
           </div>
@@ -237,7 +237,7 @@ export default function StatsCards() {
 
         {/* Total Views */}
         <div className="border-r border-gray-200 pr-6">
-          <div className="text-sm text-gray-500 mb-2">Total Views</div>
+          <div className="text-sm text-gray-500 mb-2 font-semibold">Total Views</div>
           <div className="flex items-end">
             <div className="text-3xl font-bold">{youtube_stats.total_views.toLocaleString()}</div>
           </div>
@@ -245,7 +245,7 @@ export default function StatsCards() {
 
         {/* Video Count */}
         <div className="border-r border-gray-200 pr-6">
-          <div className="text-sm text-gray-500 mb-2">Video Count</div>
+          <div className="text-sm text-gray-500 mb-2 font-semibold">Video Count</div>
           <div className="flex items-end">
             <div className="text-3xl font-bold">{youtube_stats.video_count.toLocaleString()}</div>
           </div>
@@ -253,7 +253,7 @@ export default function StatsCards() {
 
         {/* Period Views */}
         <div>
-          <div className="text-sm text-gray-500 mb-2">Period Views</div>
+          <div className="text-sm text-gray-500 mb-2 font-semibold">Period Views</div>
           <div className="flex items-end">
             <div className="text-3xl font-bold">{youtube_stats.period_views.toLocaleString()}</div>
           </div>
@@ -261,7 +261,7 @@ export default function StatsCards() {
 
         {/* Watch Time */}
         <div className="border-r border-gray-200 pr-6">
-          <div className="text-sm text-gray-500 mb-2">Watch Time (minutes)</div>
+          <div className="text-sm text-gray-500 mb-2 font-semibold">Watch Time (minutes)</div>
           <div className="flex items-end">
             <div className="text-3xl font-bold">{youtube_stats.period_watch_time_minutes.toLocaleString()}</div>
           </div>
@@ -269,7 +269,7 @@ export default function StatsCards() {
 
         {/* Period Likes */}
         <div className="border-r border-gray-200 pr-6">
-          <div className="text-sm text-gray-500 mb-2">Likes</div>
+          <div className="text-sm text-gray-500 mb-2 font-semibold">Likes</div>
           <div className="flex items-end">
             <div className="text-3xl font-bold">{youtube_stats.period_likes.toLocaleString()}</div>
           </div>
@@ -277,7 +277,7 @@ export default function StatsCards() {
 
         {/* Period Dislikes */}
         <div className="border-r border-gray-200 pr-6">
-          <div className="text-sm text-gray-500 mb-2">Dislikes</div>
+          <div className="text-sm text-gray-500 mb-2 font-semibold">Dislikes</div>
           <div className="flex items-end">
             <div className="text-3xl font-bold">{youtube_stats.period_dislikes.toLocaleString()}</div>
           </div>
@@ -285,7 +285,7 @@ export default function StatsCards() {
 
         {/* Period Comments */}
         <div>
-          <div className="text-sm text-gray-500 mb-2">Subscribers Lost</div>
+          <div className="text-sm text-gray-500 mb-2 font-semibold">Subscribers Lost</div>
           <div className="flex items-end">
             <div className="text-3xl font-bold">{youtube_stats.period_subscribers_lost.toLocaleString()}</div>
           </div>

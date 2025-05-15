@@ -20,6 +20,46 @@ interface Video {
   updated_at: string;
 }
 
+// Skeleton loader component for video cards
+const VideoCardSkeleton = () => {
+  return (
+    <div className="rounded-lg overflow-hidden border border-[#E0E0E0] h-full flex flex-col">
+      <div className="bg-[#F6F6F6] p-3">
+        <div className="relative">
+          <div className="w-full aspect-video relative overflow-hidden rounded-lg bg-gray-200 animate-pulse"></div>
+        </div>
+        
+        <div className="pt-4 px-2">
+          <div className="flex items-center mb-2">
+            <div className="w-5 h-5 mr-2 rounded-full bg-gray-200 animate-pulse"></div>
+            <div className="h-4 w-24 bg-gray-200 animate-pulse rounded"></div>
+          </div>
+          
+          <div className="mb-3 h-12">
+            <div className="h-4 w-full bg-gray-200 animate-pulse rounded mb-2"></div>
+            <div className="h-4 w-3/4 bg-gray-200 animate-pulse rounded"></div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="px-2 pt-2 pb-3 bg-white border-t border-[#E0E0E0]">
+        <div className="grid grid-cols-4 gap-1">
+          <div className="h-3 w-full bg-gray-200 animate-pulse rounded"></div>
+          <div className="h-3 w-full bg-gray-200 animate-pulse rounded"></div>
+          <div className="h-3 w-full bg-gray-200 animate-pulse rounded"></div>
+          <div className="h-3 w-full bg-gray-200 animate-pulse rounded"></div>
+        </div>
+        <div className="grid grid-cols-4 gap-1 mt-2">
+          <div className="h-4 w-10 mx-auto bg-gray-200 animate-pulse rounded"></div>
+          <div className="h-4 w-10 mx-auto bg-gray-200 animate-pulse rounded"></div>
+          <div className="h-4 w-10 mx-auto bg-gray-200 animate-pulse rounded"></div>
+          <div className="h-4 w-10 mx-auto bg-gray-200 animate-pulse rounded"></div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function VideoStatistics() {
   const { 
     selectedChannels,
@@ -64,7 +104,11 @@ export default function VideoStatistics() {
       </div>
       
       {isLoadingVideos ? (
-        <div className="text-center py-10">Loading videos...</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <VideoCardSkeleton key={i} />
+          ))}
+        </div>
       ) : videoError ? (
         <div className="text-center text-red-500 py-10">{videoError}</div>
       ) : videos.length === 0 ? (

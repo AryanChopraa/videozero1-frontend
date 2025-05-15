@@ -44,9 +44,9 @@ export default function VideoCard({
             <img 
               src={video.thumbnail_url} 
               alt={video.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover border border-[#E0E0E0]" 
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/40"></div>
+            {/* <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/40"></div> */}
             
             {showDuration && (
               <div className="absolute right-2 top-2 bg-yellow-500 text-black text-xs font-bold px-2 py-1 rounded">
