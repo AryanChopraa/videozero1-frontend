@@ -9,12 +9,14 @@ export default function StatsCards() {
     selectedChannels, 
     dateRange, 
     customStartDate, 
-    customEndDate, 
+    customEndDate,
+    statType,
     channels 
   } = useFilterStore();
   
   const [stats, setStats] = useState<ChannelStats | null>(null);
   const [combinedStats, setCombinedStats] = useState<ChannelStats | null>(null);
+  const [averageStats, setAverageStats] = useState<ChannelStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const fetchInProgress = useRef(false);
@@ -117,6 +119,7 @@ export default function StatsCards() {
           const statsData = await getChannelStats(youtubeChannelId, startDate, endDate);
           setStats(statsData);
           setCombinedStats(null);
+          setAverageStats(null);
         } else {
           // Multiple channels - fetch stats for each and combine
           const allStats: ChannelStats[] = [];
@@ -140,7 +143,7 @@ export default function StatsCards() {
             throw fetchError;
           }
 
-          // Combine stats from all channels
+          // Combine stats from all channels (total)
           const combined = allStats.reduce((acc: ChannelStats | null, current: ChannelStats) => {
             if (!acc) return current;
             
@@ -163,7 +166,27 @@ export default function StatsCards() {
             };
           }, null as ChannelStats | null);
 
+          // Calculate average stats
+          const average = allStats.length > 0 ? {
+            youtube_stats: {
+              total_subscribers: Math.round(combined!.youtube_stats.total_subscribers / allStats.length),
+              total_views: Math.round(combined!.youtube_stats.total_views / allStats.length),
+              video_count: Math.round(combined!.youtube_stats.video_count / allStats.length),
+              period_views: Math.round(combined!.youtube_stats.period_views / allStats.length),
+              period_watch_time_minutes: Math.round(combined!.youtube_stats.period_watch_time_minutes / allStats.length),
+              period_likes: Math.round(combined!.youtube_stats.period_likes / allStats.length),
+              period_dislikes: Math.round(combined!.youtube_stats.period_dislikes / allStats.length),
+              period_subscribers_lost: Math.round(combined!.youtube_stats.period_subscribers_lost / allStats.length),
+              period_comments: combined!.youtube_stats.period_comments / allStats.length,
+              period_subscribers_gained: Math.round(combined!.youtube_stats.period_subscribers_gained / allStats.length)
+            },
+            calculated_stats: combined!.calculated_stats,
+            start_date: combined!.start_date,
+            end_date: combined!.end_date
+          } : null;
+
           setCombinedStats(combined);
+          setAverageStats(average);
           setStats(null);
         }
       } catch (err) {
@@ -205,7 +228,7 @@ export default function StatsCards() {
     );
   }
 
-  if (!stats && !combinedStats) {
+  if (!stats && !combinedStats && !averageStats) {
     return (
       <div className="p-6">
         <div className="bg-white p-6 rounded-lg">
@@ -215,8 +238,18 @@ export default function StatsCards() {
     );
   }
 
-  // Use either the combined stats or individual channel stats
-  const displayStats = combinedStats || stats;
+  // Select which stats to display based on statType and available data
+  let displayStats;
+  if (stats) {
+    // If it's a single channel, just use its stats
+    displayStats = stats;
+  } else if (selectedChannels.length > 1) {
+    // For multiple channels, use the appropriate stats based on statType
+    displayStats = statType === 'average' ? averageStats : combinedStats;
+  } else {
+    // Fallback
+    displayStats = combinedStats || averageStats;
+  }
   
   if (!displayStats) {
     return null;
@@ -229,7 +262,9 @@ export default function StatsCards() {
       <div className="bg-[#F6F6F6] px-10 py-14 rounded-lg grid grid-cols-4 gap-6 border border-[#E0E0E0]">
         {/* Total Subscribers */}
         <div className="border-r border-gray-200 pr-6">
-          <div className="text-sm text-gray-500 mb-2 font-semibold">Total Subscribers</div>
+          <div className="text-sm text-gray-500 mb-2 font-semibold">
+            {statType === 'average' && selectedChannels.length > 1 ? 'Average Subscribers' : 'Total Subscribers'}
+          </div>
           <div className="flex items-end">
             <div className="text-3xl font-bold">{youtube_stats.total_subscribers.toLocaleString()}</div>
           </div>
@@ -237,7 +272,9 @@ export default function StatsCards() {
 
         {/* Total Views */}
         <div className="border-r border-gray-200 pr-6">
-          <div className="text-sm text-gray-500 mb-2 font-semibold">Total Views</div>
+          <div className="text-sm text-gray-500 mb-2 font-semibold">
+            {statType === 'average' && selectedChannels.length > 1 ? 'Average Views' : 'Total Views'}
+          </div>
           <div className="flex items-end">
             <div className="text-3xl font-bold">{youtube_stats.total_views.toLocaleString()}</div>
           </div>
@@ -245,7 +282,9 @@ export default function StatsCards() {
 
         {/* Video Count */}
         <div className="border-r border-gray-200 pr-6">
-          <div className="text-sm text-gray-500 mb-2 font-semibold">Video Count</div>
+          <div className="text-sm text-gray-500 mb-2 font-semibold">
+            {statType === 'average' && selectedChannels.length > 1 ? 'Average Video Count' : 'Video Count'}
+          </div>
           <div className="flex items-end">
             <div className="text-3xl font-bold">{youtube_stats.video_count.toLocaleString()}</div>
           </div>
@@ -253,7 +292,9 @@ export default function StatsCards() {
 
         {/* Period Views */}
         <div>
-          <div className="text-sm text-gray-500 mb-2 font-semibold">Period Views</div>
+          <div className="text-sm text-gray-500 mb-2 font-semibold">
+            {statType === 'average' && selectedChannels.length > 1 ? 'Average Period Views' : 'Period Views'}
+          </div>
           <div className="flex items-end">
             <div className="text-3xl font-bold">{youtube_stats.period_views.toLocaleString()}</div>
           </div>
@@ -261,7 +302,9 @@ export default function StatsCards() {
 
         {/* Watch Time */}
         <div className="border-r border-gray-200 pr-6">
-          <div className="text-sm text-gray-500 mb-2 font-semibold">Watch Time (minutes)</div>
+          <div className="text-sm text-gray-500 mb-2 font-semibold">
+            {statType === 'average' && selectedChannels.length > 1 ? 'Average Watch Time (min)' : 'Watch Time (minutes)'}
+          </div>
           <div className="flex items-end">
             <div className="text-3xl font-bold">{youtube_stats.period_watch_time_minutes.toLocaleString()}</div>
           </div>
@@ -269,7 +312,9 @@ export default function StatsCards() {
 
         {/* Period Likes */}
         <div className="border-r border-gray-200 pr-6">
-          <div className="text-sm text-gray-500 mb-2 font-semibold">Likes</div>
+          <div className="text-sm text-gray-500 mb-2 font-semibold">
+            {statType === 'average' && selectedChannels.length > 1 ? 'Average Likes' : 'Likes'}
+          </div>
           <div className="flex items-end">
             <div className="text-3xl font-bold">{youtube_stats.period_likes.toLocaleString()}</div>
           </div>
@@ -277,7 +322,9 @@ export default function StatsCards() {
 
         {/* Period Dislikes */}
         <div className="border-r border-gray-200 pr-6">
-          <div className="text-sm text-gray-500 mb-2 font-semibold">Dislikes</div>
+          <div className="text-sm text-gray-500 mb-2 font-semibold">
+            {statType === 'average' && selectedChannels.length > 1 ? 'Average Dislikes' : 'Dislikes'}
+          </div>
           <div className="flex items-end">
             <div className="text-3xl font-bold">{youtube_stats.period_dislikes.toLocaleString()}</div>
           </div>
@@ -285,7 +332,9 @@ export default function StatsCards() {
 
         {/* Period Comments */}
         <div>
-          <div className="text-sm text-gray-500 mb-2 font-semibold">Subscribers Lost</div>
+          <div className="text-sm text-gray-500 mb-2 font-semibold">
+            {statType === 'average' && selectedChannels.length > 1 ? 'Average Subscribers Lost' : 'Subscribers Lost'}
+          </div>
           <div className="flex items-end">
             <div className="text-3xl font-bold">{youtube_stats.period_subscribers_lost.toLocaleString()}</div>
           </div>

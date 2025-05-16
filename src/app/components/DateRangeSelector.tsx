@@ -95,7 +95,7 @@ export default function DateRangeSelector({ className = '' }: DateRangeSelectorP
   };
 
   const handleDayClick = (day: number, date: Date) => {
-    const formattedDate = date.toISOString().split('T')[0];
+    const formattedDate = formatDateToYyyyMmDd(date);
     
     if (!startDate || (startDate && endDate)) {
       // Either no start date yet, or both are set (so, reset)
@@ -227,7 +227,7 @@ export default function DateRangeSelector({ className = '' }: DateRangeSelectorP
       >
         <div className="flex items-center space-x-2">
           <Image src="/icons/calender.svg" alt="Calendar" width={16} height={16} />
-          <span className="text-xs font-semibold">{getCurrentDateRangeLabel()}</span>
+          <span className="text-[11px] font-semibold">{getCurrentDateRangeLabel()}</span>
         </div>
         <FiChevronDown className="h-3 w-3 text-gray-500" />
       </div>
@@ -243,7 +243,7 @@ export default function DateRangeSelector({ className = '' }: DateRangeSelectorP
               onClick={handleStartDateClick}
             >
               <div className="flex items-center justify-between">
-                <span className={`text-sm ${startDate ? '' : 'text-gray-400'}`}>
+                <span className={`text-xs ${startDate ? 'font-medium' : 'text-gray-400'}`}>
                   {startDate ? formatDateForDisplay(startDate) : 'Start date'}
                 </span>
                 <Image src="/icons/calender.svg" alt="Calendar" width={18} height={18} />
@@ -255,7 +255,7 @@ export default function DateRangeSelector({ className = '' }: DateRangeSelectorP
               onClick={handleEndDateClick}
             >
               <div className="flex items-center justify-between">
-                <span className={`text-sm ${endDate ? '' : 'text-gray-400'}`}>
+                <span className={`text-xs ${endDate ? 'font-medium' : 'text-gray-400'}`}>
                   {endDate ? formatDateForDisplay(endDate) : 'End date'}
                 </span>
                 <Image src="/icons/calender.svg" alt="Calendar" width={18} height={18} />
@@ -268,7 +268,7 @@ export default function DateRangeSelector({ className = '' }: DateRangeSelectorP
               <div 
                 className="flex items-center gap-1 cursor-pointer" 
               >
-                <span className="text-base font-medium">
+                <span className="text-sm font-medium">
                   {currentMonth.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                 </span>
               </div>
@@ -285,7 +285,7 @@ export default function DateRangeSelector({ className = '' }: DateRangeSelectorP
             
             <div className="grid grid-cols-7 gap-1">
               {weekDays.map(day => (
-                <div key={day} className="text-center py-1 text-sm font-medium text-gray-500">
+                <div key={day} className="text-center py-1 text-[10px] font-medium text-gray-500">
                   {day}
                 </div>
               ))}
@@ -295,9 +295,9 @@ export default function DateRangeSelector({ className = '' }: DateRangeSelectorP
                   key={index}
                   onClick={() => day.isCurrentMonth && handleDayClick(day.day, day.date)}
                   className={`
-                    text-center py-1.5 text-sm rounded-md cursor-pointer
+                    text-center py-1.5 text-[10px] rounded-md cursor-pointer
                     ${!day.isCurrentMonth ? 'text-gray-300' : 'hover:bg-gray-100'}
-                    ${(day.isStartDate || day.isEndDate) ? 'bg-black text-white' : ''}
+                    ${(day.isStartDate || day.isEndDate) ? 'bg-black text-white font-bold' : ''}
                   `}
                 >
                   {day.day}
@@ -310,7 +310,7 @@ export default function DateRangeSelector({ className = '' }: DateRangeSelectorP
             onClick={applyCustomDateRange}
             disabled={!startDate || !endDate}
             className={`
-              py-2 rounded-md text-sm w-full
+              py-2 rounded-md text-xs w-full
               ${(!startDate || !endDate) ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800'}
             `}
           >
@@ -320,9 +320,9 @@ export default function DateRangeSelector({ className = '' }: DateRangeSelectorP
           <div className="flex justify-center mt-3">
             <span 
               onClick={resetToAllTime}
-              className="text-xs text-blue-600 underline cursor-pointer"
+              className="text-[10px] text-gray-500 underline cursor-pointer"
             >
-              Reset to all time
+              Reset
             </span>
           </div>
         </div>
