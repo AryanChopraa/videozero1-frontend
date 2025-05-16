@@ -73,9 +73,11 @@ export default function VideosPage() {
     // Check if channels are available and at least one channel is selected
     if (channels.length > 0 && selectedChannels.length > 0) {
       // Fetch videos when selectedChannels, dateRange, or sortBy changes
-      fetchVideos(sortBy);
+      // Reset to page 1 and fetch the first page of the new data.
+      setCurrentPage(1);
+      fetchVideos(sortBy, 1); 
     }
-  }, [selectedChannels, dateRange, channels, sortBy, fetchVideos]);
+  }, [selectedChannels, dateRange, channels, sortBy, fetchVideos, setCurrentPage]);
   
   // Handle sort change
   const handleSortChange = (newSortValue: string) => {
@@ -150,29 +152,41 @@ export default function VideosPage() {
             </div>
             
             {/* Pagination controls */}
-            {totalPages > 1 && (
-              <div className="flex justify-center mt-8">
-                <div className="flex space-x-2">
-                  <button 
+            { (
+              <div className="fixed bottom-0 right-0 p-4 flex items-center space-x-1">
+                  <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className={`px-4 py-2 rounded ${currentPage === 1 ? 'bg-gray-200 text-gray-500' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                    className={`px-3 py-1 text-sm rounded border border-gray-300 ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
                   >
-                    Previous
+                    {"<"}
                   </button>
                   
-                  <div className="px-4 py-2">
-                    Page {currentPage} of {totalPages} ({totalVideos} videos)
-                  </div>
+                  {/* Page numbers */}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    // Basic implementation: show all pages. Will refine if too many.
+                    // TODO: Implement ellipsis for many pages based on an example
+                    .map(pageNumber => (
+                      <button
+                        key={pageNumber}
+                        onClick={() => handlePageChange(pageNumber)}
+                        className={`px-3 py-1 text-sm rounded border border-gray-300 ${
+                          currentPage === pageNumber
+                            ? 'bg-gray-700 text-white'
+                            : 'bg-white text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        {pageNumber}
+                      </button>
+                    ))}
                   
-                  <button 
+                  <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className={`px-4 py-2 rounded ${currentPage === totalPages ? 'bg-gray-200 text-gray-500' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                    className={`px-3 py-1 text-sm rounded border border-gray-300 ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
                   >
-                    Next
+                    {">"}
                   </button>
-                </div>
               </div>
             )}
           </>

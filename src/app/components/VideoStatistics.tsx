@@ -67,22 +67,30 @@ export default function VideoStatistics() {
     isLoadingVideos,
     videoError,
     fetchVideos,
-    channels
+    channels,
+    dateRange,
+    customStartDate,
+    customEndDate
   } = useFilterStore();
 
   useEffect(() => {
     // Check if channels are available and at least one channel is selected
     if (channels.length > 0 && selectedChannels.length > 0) {
-      // Fetch videos when selectedChannels changes
-      fetchVideos();
+      // Fetch videos when selectedChannels, dateRange, customStartDate, or customEndDate changes
+      fetchVideos("views", 1); // "views" will be mapped to "most_views" in the store
+    } else if (selectedChannels.length === 0) {
+      // Clear videos if no channels are selected
+      // This might be handled in the store already, but good to be explicit if needed
+      // useFilterStore.setState({ videos: [], isLoadingVideos: false, videoError: null });
     }
-  }, [selectedChannels, channels, fetchVideos]);
+  }, [selectedChannels, channels, fetchVideos, dateRange, customStartDate, customEndDate]); // Added date dependencies
 
-  // Get only top 4 videos sorted by view count
-  // Videos are already filtered by selectedChannels in the store's fetchVideos function
-  const topVideos = [...videos]
-    .sort((a, b) => b.view_count - a.view_count)
-    .slice(0, 4);
+  // Get only top 4 videos.
+  // The store's fetchVideos already sorts by "most_views" when "views" is passed and fetches page 1.
+  // The API `fetchVideos` (in api.ts) is called with `sort_by: 'most_views'` and `page: 1`.
+  // The response `result.videos` from the API should already contain the top videos if the backend sorts correctly.
+  // Slicing here ensures we only display a maximum of 4, even if the API/store returns more on page 1.
+  const topVideos = videos.slice(0, 4);
 
   // Channel selection message for the header
   const channelSelectionMessage = 
