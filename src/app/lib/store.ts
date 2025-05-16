@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { login as apiLogin, signup as apiSignup, getUserData, getChannels, getVideosByChannelId, User, AuthResponse, Channel, Video } from './api';
+import { login as apiLogin, signup as apiSignup, getUserData, getChannels, getVideosByChannelId, fetchVideos as apiFetchVideos, User, AuthResponse, Channel, Video } from './api';
 
 interface LoginParams {
   email: string;
@@ -37,13 +37,17 @@ interface FilterState {
   isLoadingVideos: boolean;
   error: string | null;
   videoError: string | null;
+  currentPage: number;
+  totalPages: number;
+  totalVideos: number;
   setSelectedChannels: (channelIds: string[]) => void;
   toggleChannel: (channelId: string) => void;
   setDateRange: (dateRange: string) => void;
   setStatType: (statType: string) => void;
   setCustomDateRange: (startDate: string, endDate: string) => void;
   fetchChannels: () => Promise<void>;
-  fetchVideos: (channelIds?: string[]) => Promise<void>;
+  fetchVideos: (sortBy?: string, page?: number) => Promise<void>;
+  setCurrentPage: (page: number) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -164,6 +168,9 @@ export const useFilterStore = create<FilterState>()(
       isLoadingVideos: false,
       error: null,
       videoError: null,
+      currentPage: 1,
+      totalPages: 1,
+      totalVideos: 0,
       
       setSelectedChannels: (channelIds: string[]) => set({ selectedChannels: channelIds }),
       
@@ -184,6 +191,8 @@ export const useFilterStore = create<FilterState>()(
         dateRange: 'custom' 
       }),
       
+      setCurrentPage: (page: number) => set({ currentPage: page }),
+      
       fetchChannels: async () => {
         const state = get();
         if (state.isLoading) return;
@@ -200,15 +209,12 @@ export const useFilterStore = create<FilterState>()(
         }
       },
       
-      fetchVideos: async (channelIds?: string[]) => {
+      fetchVideos: async (sortBy?: string, page?: number) => {
         const state = get();
         if (state.isLoadingVideos) return;
         
-        // Use provided channelIds or fallback to selectedChannels from state
-        const targetChannelIds = channelIds || state.selectedChannels;
-        
         // If no channels selected, return empty array
-        if (!targetChannelIds.length) {
+        if (state.selectedChannels.length === 0) {
           set({ videos: [], isLoadingVideos: false });
           return;
         }
@@ -216,20 +222,74 @@ export const useFilterStore = create<FilterState>()(
         set({ isLoadingVideos: true, videoError: null });
         
         try {
-          // Get videos for each selected channel and combine
-          const allVideos: Video[] = [];
+          // Get channel_ids from the selectedChannels (which are our db IDs)
+          const youtubeChannelIds = state.selectedChannels.map(channelId => {
+            const channel = state.channels.find(c => c.id === channelId);
+            return channel ? channel.channel_id : null;
+          }).filter(Boolean) as string[];
           
-          for (const channelId of targetChannelIds) {
-            // Find the channel object to get the YouTube channel_id
-            const selectedChannelObj = state.channels.find(channel => channel.id === channelId);
-            if (selectedChannelObj) {
-              const youtubeChannelId = selectedChannelObj.channel_id;
-              const channelVideos = await getVideosByChannelId(youtubeChannelId);
-              allVideos.push(...channelVideos);
-            }
+          if (youtubeChannelIds.length === 0) {
+            set({ 
+              videos: [], 
+              isLoadingVideos: false,
+              videoError: 'No valid channels selected'
+            });
+            return;
           }
           
-          set({ videos: allVideos, isLoadingVideos: false });
+          // Determine date range based on state
+          let startDate = '2020-01-01'; // default
+          let endDate = new Date().toISOString().split('T')[0]; // today
+          
+          // Set date range based on selected option
+          switch (state.dateRange) {
+            case 'last7days':
+              startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+              break;
+            case 'last30days':
+              startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+              break;
+            case 'last90days':
+              startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+              break;
+            case 'last12months':
+              startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+              break;
+            case 'custom':
+              if (state.customStartDate) startDate = state.customStartDate;
+              if (state.customEndDate) endDate = state.customEndDate;
+              break;
+          }
+          
+          // Map sorting options to backend format
+          const sortMapping: Record<string, string> = {
+            'views': 'most_views',
+            'least_views': 'least_views',
+            'likes': 'most_likes',
+            'comments': 'most_comments',
+            'newest': 'newest_first',
+            'oldest': 'oldest_first'
+          };
+          
+          const sort = sortBy ? sortMapping[sortBy] || 'most_views' : 'most_views';
+          const currentPage = page || state.currentPage;
+          
+          // Fetch videos using the new API
+          const result = await apiFetchVideos({
+            channel_ids: youtubeChannelIds,
+            start_date: startDate,
+            end_date: endDate,
+            sort_by: sort,
+            page: currentPage
+          });
+          
+          set({ 
+            videos: result.videos, 
+            isLoadingVideos: false,
+            totalPages: result.total_pages,
+            totalVideos: result.total,
+            currentPage: result.page
+          });
         } catch (error) {
           set({ 
             isLoadingVideos: false, 
@@ -248,6 +308,7 @@ export const useFilterStore = create<FilterState>()(
         customStartDate: state.customStartDate,
         customEndDate: state.customEndDate,
         channels: state.channels,
+        currentPage: state.currentPage,
       }),
     }
   )

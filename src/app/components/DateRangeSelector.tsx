@@ -32,29 +32,44 @@ export default function DateRangeSelector({ className = '' }: DateRangeSelectorP
     setCustomDateRange 
   } = useFilterStore();
 
+  // Log date changes from the store
   useEffect(() => {
-    // Set local state from store when custom dates exist
-    if (customStartDate && customEndDate && dateRange === 'custom') {
-      const startDateObj = new Date(customStartDate);
-      const endDateObj = new Date(customEndDate);
+    if (dateRange === 'custom') {
+      console.log('Date range changed:', { 
+        dateRange,
+        startDate: customStartDate,
+        endDate: customEndDate 
+      });
+    } else {
+      console.log('Date range changed:', { dateRange });
+    }
+  }, [dateRange, customStartDate, customEndDate]);
 
+  useEffect(() => {
+    if (dateRange === 'custom' && customStartDate && customEndDate) {
       setStartDate(customStartDate);
       setEndDate(customEndDate);
       
-      // Set currentMonth to the month of the startDate so calendar opens to it
-      setCurrentMonth(new Date(startDateObj.getFullYear(), startDateObj.getMonth(), 1));
-      
-      // These will be set by generateCalendar based on startDate and endDate
-      // setSelectedStartDay(startDateObj.getDate());
-      // setSelectedEndDay(endDateObj.getDate());
+      // Robustly parse YYYY-MM-DD string to avoid timezone issues for setting month and day
+      const startParts = customStartDate.split('-').map(Number); // [YYYY, MM, DD]
+      setCurrentMonth(new Date(startParts[0], startParts[1] - 1, 1)); // Month is 0-indexed for Date constructor
+      setSelectedStartDay(startParts[2]); // Day is 1-indexed from parsed string
 
-    } else if (dateRange === 'allTime') {
+      const endParts = customEndDate.split('-').map(Number); // [YYYY, MM, DD]
+      setSelectedEndDay(endParts[2]); // Day is 1-indexed from parsed string
+
+    } else if (dateRange !== 'custom') { // More general condition for reset
       setStartDate('');
       setEndDate('');
       setSelectedStartDay(null);
       setSelectedEndDay(null);
+      // Reset currentMonth to the actual current month for a fresh calendar view
+      const today = new Date();
+      setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1));
     }
-  }, [customStartDate, customEndDate, dateRange, setCustomDateRange]); // Added setCustomDateRange for completeness, though not directly used here for setting
+    // Dependencies are customStartDate, customEndDate, and dateRange from the store.
+    // setCustomDateRange is a setter and doesn't need to be a dependency.
+  }, [customStartDate, customEndDate, dateRange]);
 
   useEffect(() => {
     // Close date dropdown when clicking outside

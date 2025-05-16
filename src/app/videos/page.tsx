@@ -25,13 +25,18 @@ export default function VideosPage() {
     isLoadingVideos,
     videoError,
     fetchVideos,
-    channels
+    channels,
+    currentPage,
+    totalPages,
+    totalVideos,
+    setCurrentPage
   } = useFilterStore();
 
   const [sortBy, setSortBy] = useState("views");
   
   const sortOptions = [
     { value: "views", label: "Most views" },
+    { value: "least_views", label: "Least views" },
     { value: "likes", label: "Most likes" },
     { value: "comments", label: "Most comments" },
     { value: "newest", label: "Newest first" },
@@ -67,28 +72,21 @@ export default function VideosPage() {
   useEffect(() => {
     // Check if channels are available and at least one channel is selected
     if (channels.length > 0 && selectedChannels.length > 0) {
-      // Fetch videos when selectedChannels or dateRange changes
-      fetchVideos();
+      // Fetch videos when selectedChannels, dateRange, or sortBy changes
+      fetchVideos(sortBy);
     }
-  }, [selectedChannels, dateRange, channels, fetchVideos]);
-
-  // Sort videos based on selected sort criteria
-  const sortedVideos = [...videos].sort((a, b) => {
-    switch(sortBy) {
-      case "views":
-        return b.view_count - a.view_count;
-      case "likes":
-        return b.like_count - a.like_count;
-      case "comments":
-        return b.comment_count - a.comment_count;
-      case "newest":
-        return new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
-      case "oldest":
-        return new Date(a.published_at).getTime() - new Date(b.published_at).getTime();
-      default:
-        return b.view_count - a.view_count;
-    }
-  });
+  }, [selectedChannels, dateRange, channels, sortBy, fetchVideos]);
+  
+  // Handle sort change
+  const handleSortChange = (newSortValue: string) => {
+    setSortBy(newSortValue);
+  };
+  
+  // Handle page change
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    fetchVideos(sortBy, newPage);
+  };
 
   // Only show loading state if actually still loading auth
   if (!isClientLoaded || loading) {
@@ -122,7 +120,7 @@ export default function VideosPage() {
             <DateRangeSelector />
             <SortSelector 
               value={sortBy}
-              onChange={setSortBy}
+              onChange={handleSortChange}
               options={sortOptions}
             />
           </div>
@@ -139,16 +137,45 @@ export default function VideosPage() {
               'No videos found for selected channels'}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {sortedVideos.map((video) => (
-              <VideoCard 
-                key={video.id} 
-                video={video} 
-                channelName={channels.find(c => c.channel_id === video.channel_id)?.title || "Unknown"}
-                channelThumbnail={channels.find(c => c.channel_id === video.channel_id)?.thumbnail_url || "/placeholder-channel.png"}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {videos.map((video) => (
+                <VideoCard 
+                  key={video.id} 
+                  video={video} 
+                  channelName={channels.find(c => c.channel_id === video.channel_id)?.title || "Unknown"}
+                  channelThumbnail={channels.find(c => c.channel_id === video.channel_id)?.thumbnail_url || "/placeholder-channel.png"}
+                />
+              ))}
+            </div>
+            
+            {/* Pagination controls */}
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-8">
+                <div className="flex space-x-2">
+                  <button 
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`px-4 py-2 rounded ${currentPage === 1 ? 'bg-gray-200 text-gray-500' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                  >
+                    Previous
+                  </button>
+                  
+                  <div className="px-4 py-2">
+                    Page {currentPage} of {totalPages} ({totalVideos} videos)
+                  </div>
+                  
+                  <button 
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`px-4 py-2 rounded ${currentPage === totalPages ? 'bg-gray-200 text-gray-500' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </Layout>

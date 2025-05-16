@@ -257,4 +257,36 @@ export const getVideosByChannelId = async (channelId: string): Promise<Video[]> 
   }
 };
 
-export type { User, AuthResponse, LoginParams, SignupParams, ProfileResponse, YouTubeAuthResponse, YouTubeCallbackParams, Channel, ChannelsResponse, ChannelStats, ChannelStatsResponse, Video, VideosResponse }; 
+// New video fetching endpoint
+interface FetchVideosParams {
+  channel_ids: string[];
+  start_date: string;
+  end_date: string;
+  sort_by: string;
+  page: number;
+}
+
+interface FetchVideosResponse {
+  success: boolean;
+  videos: Video[];
+  total: number;
+  page: number;
+  total_pages: number;
+}
+
+export const fetchVideos = async (params: FetchVideosParams): Promise<FetchVideosResponse> => {
+  try {
+    const response = await api.post<FetchVideosResponse>('/videos/fetch', params);
+    if (response.data.success) {
+      return response.data;
+    }
+    throw new Error('Failed to fetch videos');
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(error.response.data.message || 'Failed to fetch videos');
+    }
+    throw new Error('Failed to fetch videos. Please try again.');
+  }
+};
+
+export type { User, AuthResponse, LoginParams, SignupParams, ProfileResponse, YouTubeAuthResponse, YouTubeCallbackParams, Channel, ChannelsResponse, ChannelStats, ChannelStatsResponse, Video, VideosResponse, FetchVideosParams, FetchVideosResponse }; 
